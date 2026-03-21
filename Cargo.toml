@@ -1,0 +1,36 @@
+[package]
+name = "autoharness"
+version = "0.1.0"
+edition = "2021"
+description = "AutoHarness: Automatically synthesize code harnesses for LLM agents"
+license = "MIT"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1.0"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+clap = { version = "4.0", features = ["derive"] }
+sha2 = "0.10"
+hex = "0.4"
+rand = "0.8"
+statrs = "0.16"
+duct = "0.13"
+notify = "6.0"
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+config = "0.13"
+toml = "0.8"
+metrics = "0.21"
+
+[dev-dependencies]
+tempfile = "3.0"
+assert_cmd = "2.0"
+predicates = "3.0"
+
+[features]
+default = ["sandbox"]
+sandbox = []
