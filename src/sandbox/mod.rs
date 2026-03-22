@@ -63,7 +63,7 @@ pub fn is_supported() -> bool {
 ///
 /// Returns a list of supported sandbox features on the current platform.
 pub fn capabilities() -> Vec<String> {
-    let mut caps = vec!["process_isolation".to_string(), "timeout".to_string()];
+    let caps = vec!["process_isolation".to_string(), "timeout".to_string()];
 
     #[cfg(target_os = "linux")]
     {

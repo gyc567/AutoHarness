@@ -37,12 +37,44 @@ pub enum HarnessType {
     /// This is useful when the policy can be fully implemented in code
     /// without needing an LLM at inference time.
     Policy,
+
+    /// Critic harness evaluates and scores proposed actions
+    ///
+    /// This is useful when you need detailed feedback on action quality
+    /// beyond simple valid/invalid decisions.
+    Critic,
+
+    /// Refiner harness improves and iterates on existing harness code
+    ///
+    /// This is useful for self-improving systems that evolve their harnesses
+    /// over time based on performance feedback.
+    Refiner,
+
+    /// Ensemble harness combines multiple harnesses for robust decision making
+    ///
+    /// This is useful when you want to leverage multiple perspectives
+    /// and reduce variance in decision making.
+    Ensemble,
+
+    /// Adaptive harness dynamically adjusts behavior based on performance feedback
+    ///
+    /// This is useful for environments that change over time, requiring
+    /// the harness to adapt its strategy.
+    Adaptive,
 }
 
 impl HarnessType {
     /// Returns true if this harness type uses an LLM
     pub fn uses_llm(&self) -> bool {
-        matches!(self, HarnessType::Filter | HarnessType::Verifier)
+        matches!(
+            self,
+            HarnessType::Filter
+                | HarnessType::Verifier
+                | HarnessType::Critic
+                | HarnessType::Refiner
+                | HarnessType::Ensemble
+                | HarnessType::Adaptive
+        )
     }
 
     /// Returns true if this harness type requires action proposals
@@ -52,7 +84,7 @@ impl HarnessType {
 
     /// Returns true if this harness type requires action verification
     pub fn requires_verification(&self) -> bool {
-        matches!(self, HarnessType::Verifier)
+        matches!(self, HarnessType::Verifier | HarnessType::Critic)
     }
 }
 
@@ -62,6 +94,10 @@ impl std::fmt::Display for HarnessType {
             HarnessType::Filter => write!(f, "Filter"),
             HarnessType::Verifier => write!(f, "Verifier"),
             HarnessType::Policy => write!(f, "Policy"),
+            HarnessType::Critic => write!(f, "Critic"),
+            HarnessType::Refiner => write!(f, "Refiner"),
+            HarnessType::Ensemble => write!(f, "Ensemble"),
+            HarnessType::Adaptive => write!(f, "Adaptive"),
         }
     }
 }

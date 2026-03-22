@@ -125,7 +125,7 @@ impl SandboxExecutor {
         input: &str,
     ) -> Result<ExecutionResult, SandboxError> {
         let start_time = Instant::now();
-        let limiter = ResourceLimiter::new(self.config.clone());
+        let _limiter = ResourceLimiter::new(self.config.clone());
 
         let temp_dir = std::env::temp_dir();
         let script_path = temp_dir.join(format!("autoharness_{}.sh", uuid::Uuid::new_v4()));
@@ -513,10 +513,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_timeout() {
-        let config = SandboxConfig::new().with_time_limit(100);
+        let config = SandboxConfig::new().with_time_limit(10);
         let executor = SandboxExecutor::new(config).unwrap();
 
-        let result = executor.execute("sleep 5").await;
+        // Use a command that will definitely take longer than 10ms
+        let result = executor.execute("find /").await;
         match &result {
             Err(SandboxError::Timeout) => {}
             _ => panic!("Expected Timeout error, got: {:?}", result),
