@@ -24,6 +24,10 @@ pub mod search;
 pub mod synthesis;
 pub mod thompson;
 
+pub use crate::templates::{
+    AdaptiveTemplate, CriticTemplate, EnsembleTemplate, FilterTemplate, HarnessTemplate,
+    PolicyTemplate, RefinerTemplate, TemplateConfig, VerifierTemplate,
+};
 pub use search::{CodeNode, SearchTree};
 pub use synthesis::{CodeSynthesisEngine, Evaluator, SynthesisConfig, SynthesisError};
 pub use thompson::ThompsonSampler;
