@@ -6,7 +6,7 @@
 
 use crate::core::error::{HarnessError, Result};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 /// A node in the search tree representing a code variant
@@ -100,10 +100,12 @@ impl CodeNode {
 /// Search tree for code variants
 #[derive(Debug, Clone)]
 pub struct SearchTree {
-    /// Root node of the tree
-    root: CodeNode,
+    /// ID of the root node
+    root_id: String,
     /// Map of node IDs to nodes
     nodes: HashMap<String, CodeNode>,
+    /// Cached set of leaf node IDs for O(1) lookup
+    leaf_nodes: HashSet<String>,
     /// Maximum depth of the tree
     max_depth: u32,
     /// Exploration constant for UCT
@@ -116,11 +118,14 @@ impl SearchTree {
         let mut nodes = HashMap::new();
         let root_id = root.id.clone();
         nodes.insert(root_id.clone(), root);
-        let root_ref = nodes.get(&root_id).unwrap().clone();
+
+        let mut leaf_nodes = HashSet::new();
+        leaf_nodes.insert(root_id.clone());
 
         Self {
-            root: root_ref,
+            root_id,
             nodes,
+            leaf_nodes,
             max_depth: 10,
             exploration_constant: 1.414,
         }
@@ -136,7 +141,9 @@ impl SearchTree {
 
     /// Get the root node
     pub fn root(&self) -> &CodeNode {
-        &self.root
+        self.nodes
+            .get(&self.root_id)
+            .expect("Root node should always exist")
     }
 
     /// Get a node by ID
@@ -158,7 +165,8 @@ impl SearchTree {
 
         if let Some(parent_id) = parent_id {
             if let Some(parent) = self.nodes.get_mut(&parent_id) {
-                parent.add_child(node_id);
+                parent.add_child(node_id.clone());
+                self.leaf_nodes.remove(&parent_id);
             } else {
                 return Err(HarnessError::not_found(format!(
                     "Parent node {} not found",
@@ -167,12 +175,13 @@ impl SearchTree {
             }
         }
 
+        self.leaf_nodes.insert(node_id);
+
         Ok(())
     }
 
-    /// Select the best leaf node for expansion using UCT
     pub fn select_leaf(&self) -> Option<&CodeNode> {
-        let mut current = &self.root;
+        let mut current = self.nodes.get(&self.root_id)?;
 
         while !current.is_leaf() && current.depth < self.max_depth {
             let best_child = current
@@ -198,7 +207,10 @@ impl SearchTree {
 
     /// Get all leaf nodes
     pub fn get_leaves(&self) -> Vec<&CodeNode> {
-        self.nodes.values().filter(|n| n.is_leaf()).collect()
+        self.leaf_nodes
+            .iter()
+            .filter_map(|id| self.nodes.get(id))
+            .collect()
     }
 
     /// Get the best node by score
@@ -238,7 +250,6 @@ impl SearchTree {
         self.nodes.len()
     }
 
-    /// Update the score of a node
     pub fn update_node_score(&mut self, node_id: &str, score: f64) -> Result<()> {
         if let Some(node) = self.nodes.get_mut(node_id) {
             node.update_score(score);
@@ -251,7 +262,6 @@ impl SearchTree {
         }
     }
 
-    /// Backpropagate a score up the tree
     pub fn backpropagate(&mut self, node_id: &str, score: f64) -> Result<()> {
         let mut current_id = Some(node_id.to_string());
 
@@ -397,5 +407,98 @@ mod tests {
         let root_id = tree.root().id.clone();
         tree.update_node_score(&root_id, 0.95).unwrap();
         assert!(tree.has_converged(0.9));
+    }
+
+    #[test]
+    fn test_leaf_cache_initial_state() {
+        let tree = SearchTree::new("fn main() {}".to_string());
+        let leaves = tree.get_leaves();
+        assert_eq!(leaves.len(), 1);
+        assert_eq!(leaves[0].code, "fn main() {}");
+        assert!(tree.root().is_leaf());
+    }
+
+    #[test]
+    fn test_leaf_cache_after_insert() {
+        let mut tree = SearchTree::new("fn main() {}".to_string());
+        let root_id = tree.root().id.clone();
+
+        let child = CodeNode::with_parent("fn child() {}".to_string(), root_id.clone(), 1);
+        let child_id = child.id.clone();
+        tree.insert_node(child).unwrap();
+
+        let leaves = tree.get_leaves();
+        assert_eq!(leaves.len(), 1);
+        assert_eq!(leaves[0].id, child_id);
+        assert!(!tree.root().is_leaf());
+    }
+
+    #[test]
+    fn test_leaf_cache_multiple_children() {
+        let mut tree = SearchTree::new("fn main() {}".to_string());
+        let root_id = tree.root().id.clone();
+
+        let child1 = CodeNode::with_parent("fn child1() {}".to_string(), root_id.clone(), 1);
+        let child1_id = child1.id.clone();
+        tree.insert_node(child1).unwrap();
+
+        let child2 = CodeNode::with_parent("fn child2() {}".to_string(), root_id.clone(), 1);
+        let child2_id = child2.id.clone();
+        tree.insert_node(child2).unwrap();
+
+        let leaves = tree.get_leaves();
+        assert_eq!(leaves.len(), 2);
+        let leaf_ids: std::collections::HashSet<_> = leaves.iter().map(|n| &n.id).collect();
+        assert!(leaf_ids.contains(&child1_id));
+        assert!(leaf_ids.contains(&child2_id));
+        assert!(!leaf_ids.contains(&root_id));
+    }
+
+    #[test]
+    fn test_leaf_cache_deep_tree() {
+        let mut tree = SearchTree::new("fn main() {}".to_string());
+        let root_id = tree.root().id.clone();
+
+        let child = CodeNode::with_parent("fn child() {}".to_string(), root_id.clone(), 1);
+        let child_id = child.id.clone();
+        tree.insert_node(child).unwrap();
+
+        let grandchild =
+            CodeNode::with_parent("fn grandchild() {}".to_string(), child_id.clone(), 2);
+        let grandchild_id = grandchild.id.clone();
+        tree.insert_node(grandchild).unwrap();
+
+        let leaves = tree.get_leaves();
+        assert_eq!(leaves.len(), 1);
+        assert_eq!(leaves[0].id, grandchild_id);
+    }
+
+    #[test]
+    fn test_leaf_cache_consistency() {
+        let mut tree = SearchTree::new("fn main() {}".to_string());
+        let root_id = tree.root().id.clone();
+
+        let child1 = CodeNode::with_parent("fn child1() {}".to_string(), root_id.clone(), 1);
+        tree.insert_node(child1).unwrap();
+
+        let child2 = CodeNode::with_parent("fn child2() {}".to_string(), root_id.clone(), 1);
+        tree.insert_node(child2).unwrap();
+
+        let child3 = CodeNode::with_parent("fn child3() {}".to_string(), root_id.clone(), 1);
+        let child3_id = child3.id.clone();
+        tree.insert_node(child3).unwrap();
+
+        let leaves = tree.get_leaves();
+        assert_eq!(leaves.len(), 3);
+
+        let grandchild =
+            CodeNode::with_parent("fn grandchild() {}".to_string(), child3_id.clone(), 2);
+        let grandchild_id = grandchild.id.clone();
+        tree.insert_node(grandchild).unwrap();
+
+        let leaves = tree.get_leaves();
+        assert_eq!(leaves.len(), 3);
+        let leaf_ids: std::collections::HashSet<_> = leaves.iter().map(|n| &n.id).collect();
+        assert!(leaf_ids.contains(&grandchild_id));
     }
 }
