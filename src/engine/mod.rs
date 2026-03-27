@@ -29,7 +29,10 @@ pub use crate::templates::{
     PolicyTemplate, RefinerTemplate, TemplateConfig, VerifierTemplate,
 };
 pub use search::{CodeNode, SearchTree};
-pub use synthesis::{CodeSynthesisEngine, Evaluator, SynthesisConfig, SynthesisError};
+pub use synthesis::{
+    CachedEvaluator, CodeSynthesisEngine, Evaluator, ParallelEvaluator, SimpleEvaluator,
+    SynthesisConfig, SynthesisError,
+};
 pub use thompson::ThompsonSampler;
 
 use serde::{Deserialize, Serialize};

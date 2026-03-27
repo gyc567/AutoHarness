@@ -108,7 +108,7 @@ def propose_action(state):
     println!("{}\n", initial_code);
 
     println!("Starting synthesis...");
-    let result = engine.synthesize(initial_code, &evaluator);
+    let result = engine.synthesize(initial_code, &evaluator, None);
 
     match result {
         Ok(optimized_code) => {

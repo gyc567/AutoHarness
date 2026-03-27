@@ -30,6 +30,7 @@ metrics = "0.21"
 tempfile = "3.0"
 assert_cmd = "2.0"
 predicates = "3.0"
+criterion = "0.5"
 
 [features]
 default = ["sandbox"]

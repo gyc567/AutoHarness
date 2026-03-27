@@ -6,10 +6,14 @@
 //! of 14.5 iterations to reach 100% legal action rate.
 
 use crate::core::error::{HarnessError, Result};
+use crate::core::HarnessType;
 use crate::engine::search::{CodeNode, SearchTree};
 use crate::engine::thompson::AdaptiveThompsonSampler;
 use crate::engine::{MutationStrategy, SimpleMutationStrategy, SynthesisStats};
+use crate::memory::{Lesson, MemoryStoreTrait};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
 use tracing::{debug, info, trace, warn};
 
 /// Error type for synthesis operations
@@ -63,6 +67,10 @@ pub struct SynthesisConfig {
     pub min_improvement: f64,
     /// Maximum number of nodes to explore (default: 1000)
     pub max_nodes: usize,
+    /// Path to memory directory (optional)
+    pub memory_path: Option<String>,
+    /// The harness type for this synthesis run
+    pub harness_type: HarnessType,
 }
 
 impl SynthesisConfig {
@@ -124,6 +132,18 @@ impl SynthesisConfig {
         self.max_nodes = max_nodes;
         self
     }
+
+    /// Set memory path for persistent learning
+    pub fn with_memory_path(mut self, path: impl Into<String>) -> Self {
+        self.memory_path = Some(path.into());
+        self
+    }
+
+    /// Set harness type for this synthesis run
+    pub fn with_harness_type(mut self, harness_type: HarnessType) -> Self {
+        self.harness_type = harness_type;
+        self
+    }
 }
 
 impl Default for SynthesisConfig {
@@ -138,6 +158,8 @@ impl Default for SynthesisConfig {
             target_iterations: 20,
             min_improvement: 0.01,
             max_nodes: 1000,
+            memory_path: None,
+            harness_type: HarnessType::Filter,
         }
     }
 }
@@ -160,8 +182,8 @@ pub trait Evaluator: Send + Sync {
     }
 
     /// Get the name of this evaluator
-    fn name(&self) -> &str {
-        "default"
+    fn name(&self) -> String {
+        "default".to_string()
     }
 }
 
@@ -188,33 +210,28 @@ impl Evaluator for SimpleEvaluator {
             return Ok(0.0);
         }
 
-        let mut score: f64 = 0.5; // Base score
+        let mut score: f64 = 0.5;
 
-        // Check for balanced braces
         let open_braces = code.matches('{').count();
         let close_braces = code.matches('}').count();
         if open_braces == close_braces {
             score += 0.2;
         }
 
-        // Check for balanced parentheses
         let open_parens = code.matches('(').count();
         let close_parens = code.matches(')').count();
         if open_parens == close_parens {
             score += 0.15;
         }
 
-        // Check for function definition
         if code.contains("fn ") {
             score += 0.1;
         }
 
-        // Penalize very short code
         if code.len() < 10 {
             score -= 0.2;
         }
 
-        // Penalize very long code
         if code.len() > 1000 {
             score -= 0.1;
         }
@@ -222,8 +239,133 @@ impl Evaluator for SimpleEvaluator {
         Ok(score.clamp(0.0, 1.0))
     }
 
-    fn name(&self) -> &str {
-        "simple"
+    fn name(&self) -> String {
+        "simple".to_string()
+    }
+}
+
+/// Parallel evaluator that evaluates multiple code snippets concurrently
+pub struct ParallelEvaluator<E> {
+    inner: E,
+    parallelism: usize,
+}
+
+impl<E: Clone> Clone for ParallelEvaluator<E> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+            parallelism: self.parallelism,
+        }
+    }
+}
+
+impl<E: Clone + Evaluator + 'static> ParallelEvaluator<E> {
+    pub fn new(inner: E, parallelism: usize) -> Self {
+        Self {
+            inner,
+            parallelism: parallelism.max(1),
+        }
+    }
+
+    pub fn evaluate_batch(&self, codes: &[String]) -> Vec<Result<f64>> {
+        use std::sync::mpsc;
+
+        let (tx, rx) = mpsc::channel();
+
+        for code in codes {
+            let tx = tx.clone();
+            let inner = self.inner.clone();
+            let code = code.clone();
+
+            std::thread::spawn(move || {
+                let result = inner.evaluate(&code);
+                let _ = tx.send(result);
+            });
+        }
+
+        codes.iter().map(|_| rx.recv().unwrap_or(Ok(0.0))).collect()
+    }
+}
+
+impl<E: Clone + Evaluator> Evaluator for ParallelEvaluator<E> {
+    fn evaluate(&self, code: &str) -> Result<f64> {
+        self.inner.evaluate(code)
+    }
+
+    fn is_valid(&self, code: &str) -> bool {
+        self.inner.is_valid(code)
+    }
+
+    fn name(&self) -> String {
+        format!("parallel({})", self.inner.name())
+    }
+}
+
+/// Cached evaluator that avoids re-evaluating identical code
+pub struct CachedEvaluator<E> {
+    inner: E,
+    cache: Arc<RwLock<HashMap<String, f64>>>,
+    max_cache_size: usize,
+}
+
+impl<E> CachedEvaluator<E> {
+    pub fn new(inner: E, max_cache_size: usize) -> Self {
+        Self {
+            inner,
+            cache: Arc::new(RwLock::new(HashMap::new())),
+            max_cache_size: max_cache_size.max(1), // At least 1 to avoid division by zero
+        }
+    }
+
+    pub fn clear_cache(&self) {
+        if let Ok(mut cache) = self.cache.write() {
+            cache.clear();
+        }
+    }
+
+    pub fn cache_size(&self) -> usize {
+        self.cache.read().map(|c| c.len()).unwrap_or(0)
+    }
+
+    pub fn inner(&self) -> &E {
+        &self.inner
+    }
+}
+
+impl<E: Evaluator> Evaluator for CachedEvaluator<E> {
+    fn evaluate(&self, code: &str) -> Result<f64> {
+        let hash = {
+            use sha2::{Digest, Sha256};
+            let mut hasher = Sha256::new();
+            hasher.update(code.as_bytes());
+            format!("{:x}", hasher.finalize())
+        };
+
+        if let Ok(cache) = self.cache.read() {
+            if let Some(&score) = cache.get(&hash) {
+                return Ok(score);
+            }
+        }
+
+        let result = self.inner.evaluate(code)?;
+
+        if let Ok(mut cache) = self.cache.write() {
+            // Clear when at or above max size, then insert new item
+            if cache.len() >= self.max_cache_size {
+                cache.clear();
+            }
+            cache.insert(hash, result);
+        }
+
+        Ok(result)
+    }
+
+    fn is_valid(&self, code: &str) -> bool {
+        self.inner.is_valid(code)
+    }
+
+    fn name(&self) -> String {
+        format!("cached({})", self.inner.name())
     }
 }
 
@@ -270,16 +412,46 @@ impl CodeSynthesisEngine {
     ///
     /// This is the main entry point for code synthesis. It performs tree search
     /// with Thompson sampling to find the best code variant.
+    ///
+    /// # Arguments
+    ///
+    /// * `initial_code` - The initial code to optimize
+    /// * `evaluator` - The evaluator to score code variants
+    /// * `memory` - Optional memory store for persistent learning
+    ///
+    /// # Returns
+    ///
+    /// The optimized code string on success, or an error
     pub fn synthesize(
         &mut self,
         initial_code: &str,
         evaluator: &dyn Evaluator,
+        memory: Option<&dyn MemoryStoreTrait>,
     ) -> std::result::Result<String, SynthesisError> {
         info!("Starting code synthesis with initial code");
 
-        // Initialize tree with initial code
+        // Phase 1: Read memory for context (if available)
+        let memory_context = if let Some(mem) = memory {
+            let context = mem.get_context(self.config.harness_type);
+            if !context.is_empty() {
+                info!("Loaded memory context for {:?}", self.config.harness_type);
+                Some(context)
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        // Initialize tree with initial code (optionally with memory context)
+        let tree_code = if let Some(ref ctx) = memory_context {
+            format!("{}\n\n--- Memory Context ---\n{}\n", initial_code, ctx)
+        } else {
+            initial_code.to_string()
+        };
+
         self.tree = SearchTree::with_config(
-            initial_code.to_string(),
+            tree_code,
             self.config.max_depth,
             self.config.exploration_constant,
         );
@@ -345,6 +517,40 @@ impl CodeSynthesisEngine {
             }
         }
 
+        // Phase 2: Write lesson to memory (if available)
+        let final_score = self.get_best_code().map(|n| n.score).unwrap_or(0.0);
+        let iterations = self.stats.convergence_iteration.unwrap_or(self.iteration);
+        let success = final_score >= self.config.convergence_threshold;
+
+        if let Some(_mem) = memory {
+            let patterns = self.extract_patterns_from_best();
+            let best_code = self.get_best_code().map(|n| n.code.clone()).unwrap_or_default();
+            let lesson = if success {
+                Lesson::success(
+                    self.config.harness_type,
+                    best_code,
+                    iterations,
+                    final_score,
+                    patterns,
+                )
+            } else {
+                Lesson::failure(
+                    self.config.harness_type,
+                    "Failed to converge".to_string(),
+                    iterations,
+                    final_score,
+                )
+            };
+
+            // Write to memory (synchronous, but fast - just file I/O)
+            // Note: This is blocking, matching fireworks-skill-memory design
+            if let Some(m) = memory {
+                if let Err(e) = m.write(lesson) {
+                    warn!("Failed to write memory: {}", e);
+                }
+            }
+        }
+
         // Return best code found
         if let Some(best) = self.get_best_code() {
             info!("Synthesis completed. Best score: {:.2}", best.score);
@@ -354,6 +560,34 @@ impl CodeSynthesisEngine {
                 iterations: self.config.max_iterations,
             })
         }
+    }
+
+    /// Extract useful patterns from the best code found
+    fn extract_patterns_from_best(&self) -> Vec<String> {
+        let mut patterns = Vec::new();
+
+        if let Some(best) = &self.best_code {
+            let code = &best.code;
+
+            // Extract patterns based on code characteristics
+            if code.contains("if ") && code.contains("return") {
+                patterns.push("Uses guard clause pattern".to_string());
+            }
+            if code.contains("match ") {
+                patterns.push("Uses match for branching".to_string());
+            }
+            if code.contains("Result") || code.contains("?") {
+                patterns.push("Uses Result for error handling".to_string());
+            }
+            if code.contains("Some(") || code.contains("None") {
+                patterns.push("Handles Option type".to_string());
+            }
+            if code.contains("vec!") {
+                patterns.push("Uses vector initialization".to_string());
+            }
+        }
+
+        patterns
     }
 
     /// Select a node for expansion using Thompson sampling
@@ -548,7 +782,8 @@ mod tests {
         let mut engine = CodeSynthesisEngine::new(config);
         let evaluator = SimpleEvaluator::new();
 
-        let result = engine.synthesize("fn test() {}", &evaluator);
+        // No memory store for tests
+        let result = engine.synthesize("fn test() {}", &evaluator, None);
         assert!(result.is_ok());
 
         let code = result.unwrap();
@@ -561,7 +796,7 @@ mod tests {
         let mut engine = CodeSynthesisEngine::new(config);
         let evaluator = SimpleEvaluator::new();
 
-        let _ = engine.synthesize("fn test() {}", &evaluator);
+        let _ = engine.synthesize("fn test() {}", &evaluator, None);
         assert!(engine.iteration() > 0);
 
         engine.reset();
@@ -573,5 +808,63 @@ mod tests {
     fn test_synthesis_error_display() {
         let err = SynthesisError::ConvergenceFailure { iterations: 50 };
         assert!(err.to_string().contains("50"));
+    }
+
+    #[test]
+    fn test_parallel_evaluator_name() {
+        let inner = SimpleEvaluator::new();
+        let parallel = ParallelEvaluator::new(inner, 4);
+        let name = parallel.name();
+        assert!(name.contains("parallel"));
+        assert!(name.contains("simple"));
+    }
+
+    #[test]
+    fn test_parallel_evaluator_clone() {
+        let inner = SimpleEvaluator::new();
+        let parallel1 = ParallelEvaluator::new(inner, 4);
+        let parallel2 = parallel1.clone();
+
+        let code = "fn test() {}";
+        let r1 = parallel1.evaluate(code).unwrap();
+        let r2 = parallel2.evaluate(code).unwrap();
+        assert_eq!(r1, r2);
+    }
+
+    #[test]
+    fn test_cached_evaluator_cache_management() {
+        let inner = SimpleEvaluator::new();
+        let cached = CachedEvaluator::new(inner, 3);
+
+        cached.evaluate("fn a() {}").unwrap();
+        cached.evaluate("fn b() {}").unwrap();
+        cached.evaluate("fn c() {}").unwrap();
+
+        assert_eq!(cached.cache_size(), 3);
+
+        cached.evaluate("fn d() {}").unwrap();
+
+        assert!(cached.cache_size() <= 3);
+    }
+
+    #[test]
+    fn test_cached_evaluator_clear() {
+        let inner = SimpleEvaluator::new();
+        let cached = CachedEvaluator::new(inner, 100);
+
+        cached.evaluate("fn test() {}").unwrap();
+        assert_eq!(cached.cache_size(), 1);
+
+        cached.clear_cache();
+        assert_eq!(cached.cache_size(), 0);
+    }
+
+    #[test]
+    fn test_parallel_evaluator_is_valid() {
+        let inner = SimpleEvaluator::new();
+        let parallel = ParallelEvaluator::new(inner, 2);
+
+        assert!(parallel.is_valid("fn test() {}"));
+        assert!(!parallel.is_valid(""));
     }
 }
