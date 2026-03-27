@@ -7,16 +7,23 @@ AutoHarness is a Rust library that automatically generates and optimizing code h
 ## ⚡ Quick Install (One-Click)
 
 ```bash
-# Clone the repository
-git clone https://github.com/gyc567/AutoHarness.git
-cd AutoHarness/install
+# One-line install (recommended)
+curl -fsSL https://raw.githubusercontent.com/gyc567/AutoHarness/main/install/install.sh | bash
 
-# Install (macOS/Linux)
-chmod +x install.sh
-./install.sh
+# Or use jsDelivr CDN (faster)
+curl -fsSL https://cdn.jsdelivr.net/gh/gyc567/AutoHarness@main/install/install.sh | bash
 
 # Verify
 autoharness --version
+```
+
+### Alternative: Clone & Install
+
+```bash
+git clone https://github.com/gyc567/AutoHarness.git
+cd AutoHarness/install
+chmod +x install.sh
+./install.sh
 ```
 
 ### Installation Options

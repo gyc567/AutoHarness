@@ -3,10 +3,15 @@
 # AutoHarness One-Click Installer v0.1.0
 # Supports: Linux (x86_64), macOS (x86_64 + ARM), Windows (x86_64)
 #
-# Usage:
-#   ./install.sh              # Install
-#   ./install.sh uninstall    # Uninstall
-#   ./install.sh --help       # Show help
+# One-line install (recommended):
+#   curl -fsSL https://raw.githubusercontent.com/gyc567/AutoHarness/main/install/install.sh | bash
+#
+# Or with specific version:
+#   curl -fsSL https://raw.githubusercontent.com/gyc567/AutoHarness/v0.1.0/install/install.sh | bash
+#
+# Local install:
+#   ./install.sh
+#   ./install.sh uninstall
 
 set -e
 
@@ -14,7 +19,12 @@ set -e
 NAME="autoharness"
 VERSION="0.1.0"
 INSTALL_DIR="${HOME}/.local/bin"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_OWNER="gyc567"
+REPO_NAME="AutoHarness"
+
+# CDN/Release URLs
+RAW_BASE="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}"
+RELEASE_BASE="https://github.com/${REPO_OWNER}/${REPO_NAME}/releases"
 
 # ========== COLORS ==========
 RED='\033[0;31m'
@@ -46,11 +56,6 @@ detect_arch() {
     esac
 }
 
-# Fallback architecture for cross-platform compatibility
-get_fallback_arch() {
-    echo "x86_64"
-}
-
 get_binary_name() {
     local os=$1
     local arch=$2
@@ -62,27 +67,54 @@ get_binary_name() {
     esac
 }
 
-# Find available binary (try native, fallback to x86_64)
-find_binary() {
+# ========== DOWNLOAD ==========
+download_binary() {
     local os=$1
     local arch=$2
+    local dest=$3
 
-    # Try native architecture first
-    local native=$(get_binary_name "$os" "$arch")
-    if [ -f "${SCRIPT_DIR}/${native}" ]; then
-        echo "$native"
-        return 0
-    fi
+    local bin_name=$(get_binary_name "$os" "$arch")
+    local temp_dir
+    temp_dir=$(mktemp -d)
+    local temp_file="${temp_dir}/${bin_name}"
 
-    # Try fallback (x86_64)
-    if [ "$arch" != "x86_64" ]; then
-        local fallback=$(get_binary_name "$os" "x86_64")
-        if [ -f "${SCRIPT_DIR}/${fallback}" ]; then
-            log_warn "No native binary for ${arch}, trying ${fallback}" >&2
-            echo "$fallback"
+    log_step "Downloading ${bin_name}..."
+
+    # Try multiple download sources in order of preference
+
+    # 1. Try GitHub raw (for development/testing)
+    local raw_url="${RAW_BASE}/main/install/${bin_name}"
+    if curl -fsSL --retry 3 --retry-delay 2 -o "$temp_file" "$raw_url" 2>/dev/null; then
+        if [ -s "$temp_file" ]; then
+            mv "$temp_file" "$dest"
+            rm -rf "$temp_dir"
             return 0
         fi
     fi
+    rm -f "$temp_file"
+
+    # 2. Try jsDelivr CDN (recommended for production)
+    local jsdelivr_url="https://cdn.jsdelivr.net/gh/${REPO_OWNER}/${REPO_NAME}@main/install/${bin_name}"
+    if curl -fsSL --retry 3 --retry-delay 2 -o "$temp_file" "$jsdelivr_url" 2>/dev/null; then
+        if [ -s "$temp_file" ]; then
+            mv "$temp_file" "$dest"
+            rm -rf "$temp_dir"
+            return 0
+        fi
+    fi
+    rm -f "$temp_file"
+
+    # 3. Try GitHub Releases (for stable versions)
+    local release_url="${RELEASE_BASE}/download/v${VERSION}/${bin_name}"
+    if curl -fsSL --retry 3 --retry-delay 2 -L -o "$temp_file" "$release_url" 2>/dev/null; then
+        if [ -s "$temp_file" ]; then
+            mv "$temp_file" "$dest"
+            rm -rf "$temp_dir"
+            return 0
+        fi
+    fi
+    rm -f "$temp_file"
+    rm -rf "$temp_dir"
 
     return 1
 }
@@ -91,17 +123,6 @@ find_binary() {
 do_install() {
     local os=$(detect_os)
     local arch=$(detect_arch)
-
-    # Find available binary
-    local bin_name
-    if ! bin_name=$(find_binary "$os" "$arch"); then
-        log_error "No suitable binary found for ${os}-${arch}"
-        log_error "Available binaries in ${SCRIPT_DIR}:"
-        ls -1 "${SCRIPT_DIR}/${NAME}"-* 2>/dev/null | grep -v '\.txt$' || true
-        exit 1
-    fi
-
-    local src="${SCRIPT_DIR}/${bin_name}"
 
     # Determine destination path
     local dest="${INSTALL_DIR}/${NAME}"
@@ -112,7 +133,7 @@ do_install() {
         log_warn "${NAME} is already installed at ${dest}"
         printf "Overwrite? [y/N]: "
         read -r answer
-        if ! [ "$answer" = "y" ] || [ "$answer" = "Y" ]; then
+        if [ "$answer" != "y" ] && [ "$answer" != "Y" ]; then
             log_info "Aborted."
             exit 0
         fi
@@ -122,19 +143,35 @@ do_install() {
     log_step "Creating install directory..."
     mkdir -p "$INSTALL_DIR"
 
-    # Copy binary
-    log_step "Installing ${bin_name}..."
-    cp "$src" "$dest"
+    # Try remote download first, fallback to local
+    if ! download_binary "$os" "$arch" "$dest" 2>/dev/null; then
+        # Fallback: try local binary
+        local script_dir="$(cd "$(dirname "$0")" && pwd)"
+        local local_bin="${script_dir}/$(get_binary_name "$os" "$arch")"
+
+        if [ -f "$local_bin" ]; then
+            log_step "Using local binary..."
+            cp "$local_bin" "$dest"
+        else
+            log_error "No suitable binary found for ${os}-${arch}"
+            log_error "Please build from source: cargo build --release"
+            exit 1
+        fi
+    fi
+
     chmod +x "$dest"
 
     log_info "Installed: ${dest}"
 
     # Check PATH
-    if ! echo "$PATH" | grep -qF "$INSTALL_DIR"; then
-        log_warn "${INSTALL_DIR} is not in your PATH."
-        log_info "Add to your shell profile (.bashrc/.zshrc):"
-        echo "  export PATH=\"${INSTALL_DIR}:\$PATH\""
-    fi
+    case ":$PATH:" in
+        *:"${INSTALL_DIR}":*) ;;
+        *)
+            log_warn "${INSTALL_DIR} is not in your PATH."
+            log_info "Add to your shell profile (.bashrc/.zshrc):"
+            echo "  export PATH=\"${INSTALL_DIR}:\$PATH\""
+            ;;
+    esac
 
     log_info "Installation complete!"
     log_info "Run '${NAME}' to get started."
@@ -166,6 +203,9 @@ show_help() {
 AutoHarness One-Click Installer v${VERSION}
 
 Usage:
+  curl -fsSL https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/install/install.sh | bash
+  curl -fsSL https://cdn.jsdelivr.net/gh/${REPO_OWNER}/${REPO_NAME}/main/install/install.sh | bash
+
   $(basename "$0")           Install ${NAME}
   $(basename "$0") install    Install ${NAME} (same as above)
   $(basename "$0") uninstall  Uninstall ${NAME}
@@ -174,8 +214,15 @@ Usage:
 Install Location: ${INSTALL_DIR}
 
 Examples:
-  ./install.sh               # Install
-  ./install.sh uninstall      # Remove
+  # One-line install (recommended)
+  curl -fsSL https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/install/install.sh | bash
+
+  # Or use jsDelivr CDN
+  curl -fsSL https://cdn.jsdelivr.net/gh/${REPO_OWNER}/${REPO_NAME}/main/install/install.sh | bash
+
+  # Local install
+  ./install.sh
+  ./install.sh uninstall
 EOF
 }
 

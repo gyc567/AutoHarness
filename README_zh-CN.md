@@ -7,16 +7,23 @@ AutoHarness 是一个 Rust 库，用于自动为 LLM 代理生成和优化代码
 ## ⚡ 快速安装（一键安装）
 
 ```bash
-# 克隆仓库
-git clone https://github.com/gyc567/AutoHarness.git
-cd AutoHarness/install
+# 一键安装（推荐）
+curl -fsSL https://raw.githubusercontent.com/gyc567/AutoHarness/main/install/install.sh | bash
 
-# 安装 (macOS/Linux)
-chmod +x install.sh
-./install.sh
+# 或使用 jsDelivr CDN（更快）
+curl -fsSL https://cdn.jsdelivr.net/gh/gyc567/AutoHarness@main/install/install.sh | bash
 
 # 验证
 autoharness --version
+```
+
+### 备选方案：克隆并安装
+
+```bash
+git clone https://github.com/gyc567/AutoHarness.git
+cd AutoHarness/install
+chmod +x install.sh
+./install.sh
 ```
 
 ### 安装选项
