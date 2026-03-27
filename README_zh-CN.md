@@ -4,6 +4,44 @@
 
 AutoHarness 是一个 Rust 库，用于自动为 LLM 代理生成和优化代码 harness，采用 [AutoHarness 论文](https://arxiv.org/abs/2603.03329) 中描述的方法。它使用树搜索结合 Thompson 采样来迭代优化 harness 代码，平均只需 14.5 次迭代即可达到 100% 合法动作率。
 
+## ⚡ 快速安装（一键安装）
+
+```bash
+# 克隆仓库
+git clone https://github.com/gyc567/AutoHarness.git
+cd AutoHarness/install
+
+# 安装 (macOS/Linux)
+chmod +x install.sh
+./install.sh
+
+# 验证
+autoharness --version
+```
+
+### 安装选项
+
+| 命令 | 描述 |
+|-----|------|
+| `./install.sh` | 安装 |
+| `./install.sh install` | 安装（同上） |
+| `./install.sh uninstall` | 卸载 |
+| `./install.sh --help` | 查看帮助 |
+
+### 安装位置
+
+- 默认安装到: `~/.local/bin/autoharness`
+- 添加到 PATH: `export PATH="$HOME/.local/bin:$PATH"`
+
+### 支持平台
+
+| 操作系统 | 架构 | 状态 |
+|---------|------|------|
+| macOS | Intel (x86_64) | ✅ 可用 |
+| macOS | Apple Silicon (ARM) | ⬅️ 使用 x86_64 兼容版 |
+| Linux | x86_64 | 🔨 需自行编译 |
+| Windows | x86_64 | 🔨 需自行编译 |
+
 ## 主要特性
 
 - **三种 Harness 模式**：过滤器、验证器、策略 harness
@@ -137,7 +175,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 - **`engine`**: 带有树搜索的代码合成引擎
 - **`sandbox`**: 安全的代码执行环境
 - **`feedback`**: 反馈收集与整合
-- **`memory`**: 基于 Markdown 的持久化记忆系统
 
 ## API 文档
 
@@ -249,24 +286,6 @@ pub struct SandboxConfig {
 }
 ```
 
-### Memory 模块
-
-基于 Markdown 的持久化记忆系统，支持增量学习和知识复用。
-
-#### 核心类型
-
-- **Principle**: 全局设计原则（最多 20 条）
-- **SuccessPattern**: 成功的代码模式
-- **ErrorSeed**: 错误模式种子
-- **Lesson**: 从实践中学习的教训
-- **TemplateKnowledge**: 模板特定知识（每种 harness 类型最多 30 条）
-
-#### 存储机制
-
-- 使用 RwLock 实现线程安全（多读单写）
-- Markdown 格式便于版本控制和协作
-- 自动备份和回滚机制
-
 ## 配置示例
 
 ### 基础配置
@@ -308,72 +327,6 @@ let config = SandboxConfig::new()
     .with_max_file_descriptors(128)
     .with_max_output_size(20 * 1024 * 1024)  // 20MB
     .with_network(false);
-```
-
-## 一键安装脚本
-
-AutoHarness 提供便携式一键安装脚本，方便快速部署。
-
-### 快速开始
-
-```bash
-cd install
-chmod +x install.sh
-./install.sh
-```
-
-### 支持平台
-
-| 操作系统 | 架构 | 状态 |
-|---------|------|------|
-| macOS | Intel (x86_64) | ✅ 可用 |
-| macOS | Apple Silicon (ARM) | ⬅️ 使用 x86_64 兼容版 |
-| Linux | x86_64 | 🔨 需自行编译 |
-| Windows | x86_64 | 🔨 需自行编译 |
-
-### 安装命令
-
-```bash
-./install.sh           # 安装
-./install.sh install   # 安装（同上）
-./install.sh uninstall # 卸载
-./install.sh --help    # 查看帮助
-```
-
-### 安装位置
-
-- 默认安装到: `~/.local/bin/autoharness`
-- 如需添加到 PATH:
-  ```bash
-  export PATH="$HOME/.local/bin:$PATH"
-  ```
-
-### 验证安装
-
-```bash
-autoharness --version
-autoharness --help
-```
-
-### 测试安装脚本
-
-```bash
-cd install
-chmod +x test.sh
-./test.sh
-```
-
-### 快速命令示例
-
-```bash
-# 合成代码
-autoharness synthesize --code "fn test() {}"
-
-# 运行基准测试
-autoharness benchmark
-
-# 查看配置
-autoharness config show
 ```
 
 ## 测试

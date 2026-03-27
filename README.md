@@ -2,7 +2,45 @@
 
 **Automatically synthesize code harnesses for LLM agents**
 
-AutoHarness is a Rust library that automatically generates and optimizes code harnesses for LLM agents, following the approach described in the [AutoHarness paper](https://arxiv.org/abs/2603.03329). It uses tree search with Thompson sampling to iteratively refine harness code, achieving an average of 14.5 iterations to reach 100% legal action rate.
+AutoHarness is a Rust library that automatically generates and optimizing code harnesses for LLM agents, following the approach described in the [AutoHarness paper](https://arxiv.org/abs/2603.03329). It uses tree search with Thompson sampling to iteratively refine harness code, achieving an average of 14.5 iterations to reach 100% legal action rate.
+
+## ⚡ Quick Install (One-Click)
+
+```bash
+# Clone the repository
+git clone https://github.com/gyc567/AutoHarness.git
+cd AutoHarness/install
+
+# Install (macOS/Linux)
+chmod +x install.sh
+./install.sh
+
+# Verify
+autoharness --version
+```
+
+### Installation Options
+
+| Command | Description |
+|---------|-------------|
+| `./install.sh` | Install |
+| `./install.sh install` | Install (same) |
+| `./install.sh uninstall` | Uninstall |
+| `./install.sh --help` | Show help |
+
+### Installation Location
+
+- Default: `~/.local/bin/autoharness`
+- Add to PATH: `export PATH="$HOME/.local/bin:$PATH"`
+
+### Supported Platforms
+
+| OS | Architecture | Status |
+|-----|--------------|--------|
+| macOS | Intel (x86_64) | ✅ Available |
+| macOS | Apple Silicon (ARM) | ⬅️ Uses x86_64 binary |
+| Linux | x86_64 | 🔨 Build from source |
+| Windows | x86_64 | 🔨 Build from source |
 
 ## 🎯 Key Features
 
@@ -12,7 +50,7 @@ AutoHarness is a Rust library that automatically generates and optimizes code ha
 - **Adaptive Optimization**: Self-adjusting exploration vs exploitation
 - **High Performance**: Average 14.5 iterations to convergence
 
-## 📦 Installation
+## 📦 Installation (Cargo)
 
 Add this to your `Cargo.toml`:
 
@@ -41,7 +79,7 @@ impl State for GameState {
     fn to_prompt(&self) -> String {
         format!("Board: {:?}, Score: {}", self.board, self.score)
     }
-    
+
     fn validate(&self) -> autoharness::core::Result<()> {
         Ok(())
     }
@@ -60,7 +98,7 @@ impl Action for GameAction {
     fn to_string(&self) -> String {
         format!("{:?}", self)
     }
-    
+
     fn from_string(s: &str) -> autoharness::core::Result<Self> {
         match s {
             "MoveUp" => Ok(GameAction::MoveUp),
@@ -92,19 +130,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = SynthesisConfig::new()
         .with_max_iterations(20)
         .with_convergence_threshold(0.95);
-    
+
     let mut engine = CodeSynthesisEngine::new(config);
     let evaluator = GameEvaluator;
-    
+
     let initial_code = r#"
         def is_legal_action(state, action):
             # TODO: Implement validation logic
             return True
     "#;
-    
+
     let optimized_code = engine.synthesize(initial_code, &evaluator)?;
     println!("Optimized harness:\n{}", optimized_code);
-    
+
     Ok(())
 }
 ```
@@ -289,112 +327,6 @@ let config = SandboxConfig::new()
     .with_max_file_descriptors(128)
     .with_max_output_size(20 * 1024 * 1024)  // 20MB
     .with_network(false);
-```
-
-## 📥 One-Click Installer
-
-AutoHarness provides a portable one-click installer for quick setup.
-
-### Quick Install
-
-```bash
-cd install
-chmod +x install.sh
-./install.sh
-```
-
-### Supported Platforms
-
-| OS | Architecture | Status |
-|-----|--------------|--------|
-| macOS | Intel (x86_64) | ✅ Available |
-| macOS | Apple Silicon (ARM) | ⬅️ Uses x86_64 binary |
-| Linux | x86_64 | 🔨 Build from source |
-| Windows | x86_64 | 🔨 Build from source |
-
-### Installer Commands
-
-```bash
-./install.sh           # Install
-./install.sh install   # Install (same as above)
-./install.sh uninstall # Uninstall
-./install.sh --help    # Show help
-```
-
-### Installation Location
-
-- Default: `~/.local/bin/autoharness`
-- Add to PATH if needed:
-  ```bash
-  export PATH="$HOME/.local/bin:$PATH"
-  ```
-
-### Verify Installation
-
-```bash
-autoharness --version
-autoharness --help
-```
-
-### Testing the Installer
-
-```bash
-cd install
-chmod +x test.sh
-./test.sh
-```
-
-## 📥 一键安装脚本
-
-AutoHarness 提供便携式一键安装脚本，方便快速部署。
-
-### 快速开始
-
-```bash
-cd install
-chmod +x install.sh
-./install.sh
-```
-
-### 支持平台
-
-| 操作系统 | 架构 | 状态 |
-|---------|------|------|
-| macOS | Intel (x86_64) | ✅ 可用 |
-| macOS | Apple Silicon (ARM) | ⬅️ 使用 x86_64 兼容版 |
-| Linux | x86_64 | 🔨 需自行编译 |
-| Windows | x86_64 | 🔨 需自行编译 |
-
-### 安装命令
-
-```bash
-./install.sh           # 安装
-./install.sh install   # 安装（同上）
-./install.sh uninstall # 卸载
-./install.sh --help    # 查看帮助
-```
-
-### 安装位置
-
-- 默认安装到: `~/.local/bin/autoharness`
-- 如需添加到 PATH:
-  ```bash
-  export PATH="$HOME/.local/bin:$PATH"
-  ```
-
-### 验证安装
-
-```bash
-autoharness --version
-autoharness --help
-```
-
-### 测试安装脚本
-
-```bash
-cd install
-chmod +x test.sh
-./test.sh
 ```
 
 ## 🧪 Testing
