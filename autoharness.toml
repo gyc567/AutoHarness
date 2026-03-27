@@ -1,0 +1,23 @@
+# AutoHarness Configuration
+# Version 0.1.0
+
+[engine]
+max_iterations = 50
+convergence_threshold = 0.95
+max_depth = 10
+mutations_per_node = 3
+exploration_constant = 1.414
+adaptive_sampling = true
+target_iterations = 20
+min_improvement = 0.01
+max_nodes = 1000
+
+[sandbox]
+memory_limit_mb = 256
+time_limit_ms = 5000
+max_file_descriptors = 64
+max_output_size = 10485760
+enable_network = false
+
+[logging]
+level = "info"

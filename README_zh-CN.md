@@ -1,36 +1,36 @@
 # AutoHarness
 
-**Automatically synthesize code harnesses for LLM agents**
+**自动为 LLM 代理合成代码 harness**
 
-AutoHarness is a Rust library that automatically generates and optimizes code harnesses for LLM agents, following the approach described in the [AutoHarness paper](https://arxiv.org/abs/2603.03329). It uses tree search with Thompson sampling to iteratively refine harness code, achieving an average of 14.5 iterations to reach 100% legal action rate.
+AutoHarness 是一个 Rust 库，用于自动为 LLM 代理生成和优化代码 harness，采用 [AutoHarness 论文](https://arxiv.org/abs/2603.03329) 中描述的方法。它使用树搜索结合 Thompson 采样来迭代优化 harness 代码，平均只需 14.5 次迭代即可达到 100% 合法动作率。
 
-## 🎯 Key Features
+## 主要特性
 
-- **Three Harness Modes**: Filter, Verifier, and Policy harnesses
-- **Tree Search + Thompson Sampling**: Efficient exploration of code space
-- **Sandboxed Execution**: Secure code execution with resource limits
-- **Adaptive Optimization**: Self-adjusting exploration vs exploitation
-- **High Performance**: Average 14.5 iterations to convergence
+- **三种 Harness 模式**：过滤器、验证器、策略 harness
+- **树搜索 + Thompson 采样**：高效探索代码空间
+- **沙箱执行**：安全的代码执行和资源限制
+- **自适应优化**：自我调整探索与利用平衡
+- **高性能**：平均 14.5 次迭代收敛
 
-## 📦 Installation
+## 安装
 
-Add this to your `Cargo.toml`:
+添加到你的 `Cargo.toml`:
 
 ```toml
 [dependencies]
 autoharness = "0.1.0"
 ```
 
-## 🚀 Quick Start
+## 快速开始
 
-### Basic Usage
+### 基础用法
 
 ```rust
 use autoharness::core::{State, Action, Harness, HarnessType};
 use autoharness::engine::{CodeSynthesisEngine, SynthesisConfig, Evaluator};
 use autoharness::sandbox::{SandboxExecutor, SandboxConfig};
 
-// Define your state
+// 定义你的状态
 #[derive(Debug, Clone, serde::Serialize)]
 struct GameState {
     board: Vec<Vec<i32>>,
@@ -41,13 +41,13 @@ impl State for GameState {
     fn to_prompt(&self) -> String {
         format!("Board: {:?}, Score: {}", self.board, self.score)
     }
-    
+
     fn validate(&self) -> autoharness::core::Result<()> {
         Ok(())
     }
 }
 
-// Define your action
+// 定义你的动作
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 enum GameAction {
     MoveUp,
@@ -60,7 +60,7 @@ impl Action for GameAction {
     fn to_string(&self) -> String {
         format!("{:?}", self)
     }
-    
+
     fn from_string(s: &str) -> autoharness::core::Result<Self> {
         match s {
             "MoveUp" => Ok(GameAction::MoveUp),
@@ -72,13 +72,13 @@ impl Action for GameAction {
     }
 }
 
-// Create a custom evaluator
+// 创建自定义评估器
 struct GameEvaluator;
 
 impl Evaluator for GameEvaluator {
     fn evaluate(&self, code: &str) -> autoharness::engine::Result<f64> {
-        // Evaluate the harness code
-        // Return a score between 0.0 and 1.0
+        // 评估 harness 代码
+        // 返回 0.0 到 1.0 之间的分数
         if code.contains("is_legal_action") {
             Ok(0.8)
         } else {
@@ -87,64 +87,65 @@ impl Evaluator for GameEvaluator {
     }
 }
 
-// Synthesize a harness
+// 合成 harness
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = SynthesisConfig::new()
         .with_max_iterations(20)
         .with_convergence_threshold(0.95);
-    
+
     let mut engine = CodeSynthesisEngine::new(config);
     let evaluator = GameEvaluator;
-    
+
     let initial_code = r#"
         def is_legal_action(state, action):
-            # TODO: Implement validation logic
+            # TODO: 实现验证逻辑
             return True
     "#;
-    
+
     let optimized_code = engine.synthesize(initial_code, &evaluator)?;
-    println!("Optimized harness:\n{}", optimized_code);
-    
+    println!("优化的 harness:\n{}", optimized_code);
+
     Ok(())
 }
 ```
 
-## 🏗️ Architecture
+## 架构
 
-### Core Components
+### 核心组件
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    AutoHarness Architecture                   │
+│                    AutoHarness 架构                           │
 ├──────────────────────────────────────────────────────────────┤
 │                                                               │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐       │
 │  │   Core      │    │   Engine    │    │   Sandbox   │       │
-│  │   Module    │    │   Module    │    │   Module    │       │
+│  │   模块      │    │   模块      │    │   模块      │       │
 │  └─────────────┘    └─────────────┘    └─────────────┘       │
 │         │                  │                  │               │
 │         ▼                  ▼                  ▼               │
 │  ┌─────────────────────────────────────────────────────┐     │
-│  │              Feedback Module                         │     │
+│  │              Feedback 模块                           │     │
 │  └─────────────────────────────────────────────────────┘     │
 │                                                               │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### Module Overview
+### 模块概览
 
-- **`core`**: Core data models (State, Action, Harness traits)
-- **`engine`**: Code synthesis engine with tree search
-- **`sandbox`**: Secure code execution environment
-- **`feedback`**: Feedback collection and consolidation
+- **`core`**: 核心数据模型（State、Action、Harness trait）
+- **`engine`**: 带有树搜索的代码合成引擎
+- **`sandbox`**: 安全的代码执行环境
+- **`feedback`**: 反馈收集与整合
+- **`memory`**: 基于 Markdown 的持久化记忆系统
 
-## 📚 API Documentation
+## API 文档
 
-### Core Module
+### Core 模块
 
 #### `State` Trait
 
-Represents the current state of an environment.
+表示环境的当前状态。
 
 ```rust
 pub trait State: Serialize + Clone + Send + Sync {
@@ -155,7 +156,7 @@ pub trait State: Serialize + Clone + Send + Sync {
 
 #### `Action` Trait
 
-Represents an action that can be taken in an environment.
+表示可以在环境中执行的动作。
 
 ```rust
 pub trait Action: Serialize + Clone + Send + Sync + PartialEq {
@@ -166,7 +167,7 @@ pub trait Action: Serialize + Clone + Send + Sync + PartialEq {
 
 #### `Harness` Trait
 
-Core interface for all harness types.
+所有 harness 类型的核心接口。
 
 ```rust
 pub trait Harness<S: State, A: Action>: Send + Sync {
@@ -176,11 +177,11 @@ pub trait Harness<S: State, A: Action>: Send + Sync {
 }
 ```
 
-### Engine Module
+### Engine 模块
 
 #### `CodeSynthesisEngine`
 
-Main synthesis engine that orchestrates the search process.
+协调搜索过程的主合成引擎。
 
 ```rust
 pub struct CodeSynthesisEngine {
@@ -198,27 +199,27 @@ impl CodeSynthesisEngine {
 
 #### `SynthesisConfig`
 
-Configuration for the synthesis engine.
+合成引擎的配置。
 
 ```rust
 pub struct SynthesisConfig {
-    pub max_iterations: u32,           // Default: 50
-    pub convergence_threshold: f64,    // Default: 0.95
-    pub max_depth: u32,                // Default: 10
-    pub mutations_per_node: usize,     // Default: 3
-    pub exploration_constant: f64,     // Default: 1.414
-    pub adaptive_sampling: bool,       // Default: true
-    pub target_iterations: u32,        // Default: 20
-    pub min_improvement: f64,          // Default: 0.01
-    pub max_nodes: usize,              // Default: 1000
+    pub max_iterations: u32,           // 默认: 50
+    pub convergence_threshold: f64,   // 默认: 0.95
+    pub max_depth: u32,                // 默认: 10
+    pub mutations_per_node: usize,    // 默认: 3
+    pub exploration_constant: f64,    // 默认: 1.414
+    pub adaptive_sampling: bool,       // 默认: true
+    pub target_iterations: u32,        // 默认: 20
+    pub min_improvement: f64,          // 默认: 0.01
+    pub max_nodes: usize,              // 默认: 1000
 }
 ```
 
-### Sandbox Module
+### Sandbox 模块
 
 #### `SandboxExecutor`
 
-Secure code execution with resource limits.
+带资源限制的安全代码执行。
 
 ```rust
 pub struct SandboxExecutor {
@@ -234,23 +235,41 @@ impl SandboxExecutor {
 
 #### `SandboxConfig`
 
-Configuration for sandbox execution.
+沙箱执行配置。
 
 ```rust
 pub struct SandboxConfig {
-    pub memory_limit_mb: u64,          // Default: 256
-    pub time_limit_ms: u64,            // Default: 5000
-    pub max_file_descriptors: u32,     // Default: 64
-    pub max_output_size: usize,        // Default: 10MB
-    pub enable_network: bool,          // Default: false
+    pub memory_limit_mb: u64,          // 默认: 256
+    pub time_limit_ms: u64,            // 默认: 5000
+    pub max_file_descriptors: u32,     // 默认: 64
+    pub max_output_size: usize,        // 默认: 10MB
+    pub enable_network: bool,          // 默认: false
     pub working_directory: Option<PathBuf>,
     pub environment_variables: HashMap<String, String>,
 }
 ```
 
-## 🔧 Configuration Examples
+### Memory 模块
 
-### Basic Configuration
+基于 Markdown 的持久化记忆系统，支持增量学习和知识复用。
+
+#### 核心类型
+
+- **Principle**: 全局设计原则（最多 20 条）
+- **SuccessPattern**: 成功的代码模式
+- **ErrorSeed**: 错误模式种子
+- **Lesson**: 从实践中学习的教训
+- **TemplateKnowledge**: 模板特定知识（每种 harness 类型最多 30 条）
+
+#### 存储机制
+
+- 使用 RwLock 实现线程安全（多读单写）
+- Markdown 格式便于版本控制和协作
+- 自动备份和回滚机制
+
+## 配置示例
+
+### 基础配置
 
 ```rust
 use autoharness::engine::SynthesisConfig;
@@ -261,7 +280,7 @@ let config = SynthesisConfig::new()
     .with_max_depth(10);
 ```
 
-### Advanced Configuration
+### 高级配置
 
 ```rust
 use autoharness::engine::SynthesisConfig;
@@ -278,7 +297,7 @@ let config = SynthesisConfig::new()
     .with_max_nodes(2000);
 ```
 
-### Sandbox Configuration
+### 沙箱配置
 
 ```rust
 use autoharness::sandbox::SandboxConfig;
@@ -291,60 +310,7 @@ let config = SandboxConfig::new()
     .with_network(false);
 ```
 
-## 📥 One-Click Installer
-
-AutoHarness provides a portable one-click installer for quick setup.
-
-### Quick Install
-
-```bash
-cd install
-chmod +x install.sh
-./install.sh
-```
-
-### Supported Platforms
-
-| OS | Architecture | Status |
-|-----|--------------|--------|
-| macOS | Intel (x86_64) | ✅ Available |
-| macOS | Apple Silicon (ARM) | ⬅️ Uses x86_64 binary |
-| Linux | x86_64 | 🔨 Build from source |
-| Windows | x86_64 | 🔨 Build from source |
-
-### Installer Commands
-
-```bash
-./install.sh           # Install
-./install.sh install   # Install (same as above)
-./install.sh uninstall # Uninstall
-./install.sh --help    # Show help
-```
-
-### Installation Location
-
-- Default: `~/.local/bin/autoharness`
-- Add to PATH if needed:
-  ```bash
-  export PATH="$HOME/.local/bin:$PATH"
-  ```
-
-### Verify Installation
-
-```bash
-autoharness --version
-autoharness --help
-```
-
-### Testing the Installer
-
-```bash
-cd install
-chmod +x test.sh
-./test.sh
-```
-
-## 📥 一键安装脚本
+## 一键安装脚本
 
 AutoHarness 提供便携式一键安装脚本，方便快速部署。
 
@@ -397,49 +363,62 @@ chmod +x test.sh
 ./test.sh
 ```
 
-## 🧪 Testing
+### 快速命令示例
 
-Run the test suite:
+```bash
+# 合成代码
+autoharness synthesize --code "fn test() {}"
+
+# 运行基准测试
+autoharness benchmark
+
+# 查看配置
+autoharness config show
+```
+
+## 测试
+
+运行测试套件：
 
 ```bash
 cargo test
 ```
 
-Run specific tests:
+运行特定测试：
 
 ```bash
 cargo test test_synthesis
 cargo test test_sandbox
 ```
 
-## 📊 Performance
+## 性能
 
-Based on the AutoHarness paper:
+基于 AutoHarness 论文：
 
-- **Average iterations to convergence**: 14.5
-- **Legal action rate**: 100% (145 TextArena games)
-- **Performance improvement**: Small model + harness > Large model without harness
+- **平均收敛迭代次数**: 14.5
+- **合法动作率**: 100%（145 场 TextArena 游戏）
+- **性能提升**: 小模型 + harness > 大模型无 harness
 
-## 🔒 Security
+## 安全
 
-AutoHarness implements several security measures:
+AutoHarness 实现了多项安全措施：
 
-1. **Sandboxed Execution**: All generated code runs in isolated processes
-2. **Resource Limits**: Memory, CPU, and file descriptor limits
-3. **System Call Filtering**: Only necessary syscalls are allowed
-4. **Timeout Enforcement**: Processes are killed if they exceed time limits
-5. **Input Validation**: Code is validated before execution
+1. **沙箱执行**：所有生成的代码在隔离进程中运行
+2. **资源限制**：内存、CPU 和文件描述符限制
+3. **系统调用过滤**：仅允许必要的系统调用
+4. **超时强制**：超时的进程将被终止
+5. **输入验证**：执行前验证代码
 
-## 🤝 Contributing
+## 贡献
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+欢迎贡献！请随时提交 Pull Request。
 
-## 📄 License
+## 许可证
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+本项目基于 MIT 许可证 - 详见 [LICENSE](LICENSE) 文件。
 
-## 🙏 Acknowledgments
+## 致谢
 
-- [AutoHarness Paper](https://arxiv.org/abs/2603.03329) by Xinghua Lou et al.
-- [TextArena](https://github.com/google-deepmind/arena) for game environments
-- [Thompson Sampling](https://en.wikipedia.org/wiki/Thompson_sampling) for exploration strategy
+- [AutoHarness 论文](https://arxiv.org/abs/2603.03329) - Xinghua Lou 等
+- [TextArena](https://github.com/google-deepmind/arena) - 游戏环境
+- [Thompson 采样](https://en.wikipedia.org/wiki/Thompson_sampling) - 探索策略
