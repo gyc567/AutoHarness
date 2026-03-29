@@ -9,6 +9,12 @@ AutoHarness is a Rust library that automatically generates and optimizing code h
 > **Copy and paste the sentence below directly into OpenCode or CloudCode to start:**
 
 ```
+Now use AutoHarness CLI to design a Harness engineering system for this project.
+```
+
+> **Or in Chinese (中文):**
+
+```
 现在用 AutoHarness 这个 CLI 对本项目进行设计 Harness 工程系统。
 ```
 
