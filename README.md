@@ -4,6 +4,16 @@
 
 AutoHarness is a Rust library that automatically generates and optimizing code harnesses for LLM agents, following the approach described in the [AutoHarness paper](https://arxiv.org/abs/2603.03329). It uses tree search with Thompson sampling to iteratively refine harness code, achieving an average of 14.5 iterations to reach 100% legal action rate.
 
+## 🚀 One-Sentence Quick Start (For OpenCode/CloudCode)
+
+> **Copy and paste the sentence below directly into OpenCode or CloudCode to start:**
+
+```
+现在用 AutoHarness 这个 CLI 对本项目进行设计 Harness 工程系统。
+```
+
+This will automatically initiate the AutoHarness system to design and generate a Harness engineering system for your project.
+
 ## ⚡ Quick Install (One-Click)
 
 ```bash

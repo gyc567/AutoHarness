@@ -4,6 +4,16 @@
 
 AutoHarness 是一个 Rust 库，用于自动为 LLM 代理生成和优化代码 harness，采用 [AutoHarness 论文](https://arxiv.org/abs/2603.03329) 中描述的方法。它使用树搜索结合 Thompson 采样来迭代优化 harness 代码，平均只需 14.5 次迭代即可达到 100% 合法动作率。
 
+## 🚀 一句话启动（适用于 OpenCode/CloudCode）
+
+> **直接在 OpenCode 或 CloudCode 中复制粘贴以下语句即可启动：**
+
+```
+现在用 AutoHarness 这个 CLI 对本项目进行设计 Harness 工程系统。
+```
+
+这将自动启动 AutoHarness 系统，为您的项目设计和生成 Harness 工程系统。
+
 ## ⚡ 快速安装（一键安装）
 
 ```bash
