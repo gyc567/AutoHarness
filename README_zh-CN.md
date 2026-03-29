@@ -9,7 +9,7 @@ AutoHarness 是一个 Rust 库，用于自动为 LLM 代理生成和优化代码
 > **直接在 OpenCode 或 CloudCode 中复制粘贴以下语句即可启动：**
 
 ```
-现在用 AutoHarness 这个 CLI 对本项目进行设计 Harness 工程系统。
+现在用 AutoHarness 这个 CLI:https://github.com/gyc567/AutoHarness 对本项目进行设计 Harness 工程系统。
 ```
 
 这将自动启动 AutoHarness 系统，为您的项目设计和生成 Harness 工程系统。
