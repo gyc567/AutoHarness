@@ -128,10 +128,7 @@ pub fn parse_template_knowledge(content: &str) -> TemplateKnowledge {
 }
 
 /// Serialize template knowledge to Markdown
-pub fn serialize_template_knowledge(
-    name: &str,
-    knowledge: &TemplateKnowledge,
-) -> String {
+pub fn serialize_template_knowledge(name: &str, knowledge: &TemplateKnowledge) -> String {
     let mut md = format!("# {} Template Knowledge\n\n", name);
 
     // Description based on type
@@ -236,7 +233,7 @@ pub fn load_memory_from_dir<P: AsRef<Path>>(dir: P) -> std::io::Result<MemoryCon
         for entry in std::fs::read_dir(&templates_dir)? {
             let entry = entry?;
             let path = entry.path();
-            if path.extension().map_or(false, |ext| ext == "md") {
+            if path.extension().is_some_and(|ext| ext == "md") {
                 let stem = path.file_stem().unwrap().to_string_lossy().to_string();
                 if let Ok(knowledge) = load_template_knowledge(&path) {
                     content.template_knowledge.insert(stem, knowledge);

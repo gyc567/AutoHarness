@@ -24,6 +24,7 @@ use crate::core::error::{HarnessError, Result};
 ///
 /// ```rust
 /// use autoharness::core::Action;
+/// use autoharness::core::error::HarnessError;
 /// use serde::Serialize;
 ///
 /// #[derive(Serialize, Clone, PartialEq)]
@@ -42,8 +43,7 @@ use crate::core::error::{HarnessError, Result};
 ///         }
 ///     }
 ///
-///     fn from_string(s: &str) -> Result<Self, HarnessError> {
-///         // Parse the action from string representation
+///     fn from_string(_s: &str) -> Result<Self, HarnessError> {
 ///         Err(HarnessError::action_parse("Not implemented"))
 ///     }
 /// }
@@ -115,7 +115,11 @@ where
     T: Serialize + Clone + Send + Sync + PartialEq,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.to_string())
+        write!(
+            f,
+            "{}",
+            serde_json::to_string(&self.data).unwrap_or_default()
+        )
     }
 }
 

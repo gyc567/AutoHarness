@@ -77,7 +77,11 @@ impl MemoryStore {
         match self.inner.read() {
             Ok(guard) => {
                 let key = template_type.to_string().to_lowercase();
-                guard.template_knowledge.get(&key).cloned().unwrap_or_default()
+                guard
+                    .template_knowledge
+                    .get(&key)
+                    .cloned()
+                    .unwrap_or_default()
             }
             Err(e) => {
                 tracing::warn!("Failed to acquire read lock: {}", e);
@@ -239,7 +243,7 @@ impl MemoryStore {
         if let Ok(entries) = std::fs::read_dir(&templates_dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
-                if path.extension().map_or(false, |ext| ext == "md") {
+                if path.extension().is_some_and(|ext| ext == "md") {
                     let _ = restore_from_backup(&path);
                 }
             }

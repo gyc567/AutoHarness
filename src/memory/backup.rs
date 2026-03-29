@@ -2,8 +2,8 @@
 //!
 //! Creates .md.bak backups before each write, enabling rollback.
 
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
 
 /// Create a backup of a file before modifying it
 pub fn create_backup<P: AsRef<Path>>(path: P) -> std::io::Result<PathBuf> {
@@ -34,10 +34,7 @@ fn create_numbered_backup<P: AsRef<Path>>(path: P) -> std::io::Result<PathBuf> {
 
         // Safety limit
         if counter > 100 {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Too many backup files",
-            ));
+            return Err(std::io::Error::other("Too many backup files"));
         }
     }
 }

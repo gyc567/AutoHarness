@@ -397,11 +397,6 @@ impl CodeSynthesisEngine {
         }
     }
 
-    /// Create a new synthesis engine with default configuration
-    pub fn default() -> Self {
-        Self::new(SynthesisConfig::default())
-    }
-
     /// Set a custom mutation strategy
     pub fn with_mutation_strategy(mut self, strategy: Box<dyn MutationStrategy>) -> Self {
         self.mutation_strategy = strategy;
@@ -524,7 +519,10 @@ impl CodeSynthesisEngine {
 
         if let Some(_mem) = memory {
             let patterns = self.extract_patterns_from_best();
-            let best_code = self.get_best_code().map(|n| n.code.clone()).unwrap_or_default();
+            let best_code = self
+                .get_best_code()
+                .map(|n| n.code.clone())
+                .unwrap_or_default();
             let lesson = if success {
                 Lesson::success(
                     self.config.harness_type,

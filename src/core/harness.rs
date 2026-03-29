@@ -118,6 +118,31 @@ impl std::fmt::Display for HarnessType {
 /// ```rust
 /// use autoharness::core::{Harness, HarnessType, State, Action};
 /// use autoharness::core::error::{HarnessError, Result};
+/// use serde::{Serialize, Deserialize};
+///
+/// #[derive(Serialize, Clone)]
+/// struct MyState { value: i32 }
+///
+/// impl State for MyState {
+///     fn to_prompt(&self) -> String {
+///         format!("State: {}", self.value)
+///     }
+///     fn validate(&self) -> Result<()> {
+///         Ok(())
+///     }
+/// }
+///
+/// #[derive(Serialize, Clone, PartialEq, Deserialize)]
+/// struct MyAction { move_x: i32 }
+///
+/// impl Action for MyAction {
+///     fn to_string(&self) -> String {
+///         format!("{}", self.move_x)
+///     }
+///     fn from_string(s: &str) -> Result<Self> {
+///         Ok(MyAction { move_x: s.parse().unwrap_or(0) })
+///     }
+/// }
 ///
 /// struct MyHarness;
 ///
@@ -126,13 +151,11 @@ impl std::fmt::Display for HarnessType {
 ///         HarnessType::Filter
 ///     }
 ///
-///     fn evaluate(&self, state: &MyState, action: &MyAction) -> Result<bool> {
-///         // Check if action is valid in this state
+///     fn evaluate(&self, _state: &MyState, _action: &MyAction) -> Result<bool> {
 ///         Ok(true)
 ///     }
 ///
-///     fn propose_actions(&self, state: &MyState) -> Result<Vec<MyAction>> {
-///         // Return valid actions for this state
+///     fn propose_actions(&self, _state: &MyState) -> Result<Vec<MyAction>> {
 ///         Ok(vec![])
 ///     }
 /// }

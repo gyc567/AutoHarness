@@ -23,6 +23,7 @@ use crate::core::error::Result;
 ///
 /// ```rust
 /// use autoharness::core::State;
+/// use autoharness::core::error::HarnessError;
 /// use serde::Serialize;
 ///
 /// #[derive(Serialize, Clone)]
