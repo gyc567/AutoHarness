@@ -4,6 +4,31 @@
 
 ---
 
+## 0. Before You Start (Mandatory)
+
+Before writing any code or modifying any files, you MUST follow this workflow:
+
+### Step 1: Restate Your Understanding
+
+First, explain in your own words:
+- **What problem are we solving?** (Deliverables, goals)
+- **What is the expected output?**
+- **Mark any assumptions** you're making that you're not sure about
+
+### Step 2: Ask Clarifying Questions
+
+Ask **maximum 3 questions at a time** to clarify:
+1. **True Goal**: What is the actual goal (not just what's written)?
+2. **Constraints**: Technical stack, performance requirements, existing code compatibility, what cannot be changed
+3. **Implementation Plan**: Core approach and why this方案
+
+### Step 3: Wait for Confirmation
+
+**DO NOT write any code or modify any files** until you receive explicit confirmation:
+> "可以开始" / "can start"
+
+---
+
 ## 1. Build, Test & Development Commands
 
 ### Core Commands
