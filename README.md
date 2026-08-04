@@ -389,6 +389,41 @@ AutoHarness implements several security measures:
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
+## 🤖 GOAL.md - Autonomous Improvement
+
+This project uses the [GOAL.md](docs/goal-md/GOAL-md-融合方案.md) pattern for autonomous code improvement. AI agents can use this to continuously improve project quality.
+
+### Quick Score Check
+
+```bash
+./scripts/score.sh
+```
+
+### Current Score
+
+```
+AutoHarness Code Quality: 100 / 100
+├── format      : 20 / 20 ✓
+├── clippy      : 20 / 20 ✓
+├── tests       : 25 / 25 ✓
+├── docs        : 15 / 15 ✓
+├── maintenance : 20 / 20 ✓
+└── safety      :  7 / 10 ✓
+```
+
+### For AI Agents
+
+Read the [GOAL.md Tutorial](docs/goal-md/tutorial/01-quick-start.md) to learn how to use this system.
+
+### Key Files
+
+| File | Description |
+|------|-------------|
+| [GOAL.md](GOAL.md) | Project improvement goals |
+| [CLAUDE.md](CLAUDE.md) | Agent instructions |
+| [template/GOAL.md](template/GOAL.md) | GOAL.md template |
+| [docs/goal-md/tutorial/](docs/goal-md/tutorial/) | Complete tutorial |
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
