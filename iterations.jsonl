@@ -1,1 +1,4 @@
 {"iteration":0,"before":null,"after":null,"action":"baseline","result":"initial","note":"GOAL.md created, baseline measurement"}
+
+{"iteration":1,"before":15,"after":20,"action":"Fix 3 sort_by_key clippy warnings","result":"kept","note":"Replaced sort_by with sort_by_key using std::cmp::Reverse"}
+{"iteration":2,"before":0,"after":20,"action":"Run cargo fmt on all files","result":"kept","note":"Fixed formatting issues across 5 files"}
