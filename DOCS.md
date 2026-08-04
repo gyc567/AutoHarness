@@ -35,6 +35,15 @@
 - [GOAL.md 融合方案](docs/goal-md/GOAL-md-融合方案.md)
 - [快速开始](docs/goal-md/快速开始.md)
 - [API 参考](docs/goal-md/API-参考.md)
+- [CLAUDE.md](CLAUDE.md) - Agent 指导文件
+- [template/GOAL.md](template/GOAL.md) - GOAL.md 可复用模板
+
+#### 示例
+
+- [Rust 项目示例](examples/01-rust-code-quality.md)
+- [测试合成项目示例](examples/02-test-synthesis.md)
+- [CLI 工具示例](examples/03-cli-tool.md)
+- [库项目示例](examples/04-library.md)
 
 ---
 
