@@ -2,6 +2,77 @@
 
 **Automatically synthesize code harnesses for LLM agents**
 
+---
+
+## 📚 Documentation
+
+### 🌍 Languages / 语言
+
+| Language | Description |
+|----------|-------------|
+| [English](README.md) | Main documentation |
+| [中文](README_zh-CN.md) | 中文文档 / Chinese docs |
+
+### 🚀 Quick Start
+
+| Guide | Description |
+|-------|-------------|
+| [5-Minute Quick Start](docs/goal-md/tutorial/01-quick-start.md) | Get started in 5 minutes |
+| [中文快速开始](docs/goal-md/tutorial-cn/01-quick-start.md) | 5 分钟快速开始 |
+
+### 📖 GOAL.md Tutorials (Complete Guide)
+
+#### English Tutorials
+
+| Document | Description |
+|----------|-------------|
+| [Overview](docs/goal-md/tutorial/00-overview.md) | GOAL.md concept introduction |
+| [Fitness Function](docs/goal-md/tutorial/02a-fitness-function.md) | Scoring script design |
+| [Action Catalog](docs/goal-md/tutorial/02b-action-catalog.md) | Action catalog design |
+| [Create Your First GOAL.md](docs/goal-md/tutorial/03-create-goal.md) | Complete example |
+| [Multi-Agent Collaboration](docs/goal-md/tutorial/04-multi-agent.md) | Team collaboration |
+| [Advanced Patterns](docs/goal-md/tutorial/05-advanced-patterns-1.md) | Advanced techniques |
+| [Troubleshooting](docs/goal-md/tutorial/06-troubleshooting.md) | FAQ and solutions |
+
+#### 中文教程
+
+| 文档 | 说明 |
+|------|------|
+| [概述](docs/goal-md/tutorial-cn/00-overview.md) | GOAL.md 概念介绍 |
+| [适应度函数](docs/goal-md/tutorial-cn/02a-fitness-function.md) | 评分脚本设计 |
+| [行动目录](docs/goal-md/tutorial-cn/02b-action-catalog.md) | 行动目录设计 |
+| [创建第一个 GOAL.md](docs/goal-md/tutorial-cn/03-create-goal.md) | 完整示例 |
+| [多 Agent 协作](docs/goal-md/tutorial-cn/04-multi-agent.md) | 团队协作 |
+| [进阶模式](docs/goal-md/tutorial-cn/05-advanced-patterns.md) | 高级技巧 |
+| [常见问题](docs/goal-md/tutorial-cn/06-troubleshooting.md) | 故障排除 |
+
+### 📁 Reference Files
+
+| File | Description |
+|------|-------------|
+| [GOAL.md](GOAL.md) | Project improvement goals |
+| [CLAUDE.md](CLAUDE.md) | AI Agent instructions |
+| [template/GOAL.md](template/GOAL.md) | GOAL.md template |
+| [examples/](examples/) | Complete examples |
+
+### 📊 Current Score
+
+```bash
+./scripts/score.sh
+```
+
+```
+AutoHarness Code Quality: 100 / 100
+├── format      : 20 / 20 ✓
+├── clippy      : 20 / 20 ✓
+├── tests       : 25 / 25 ✓
+├── docs        : 15 / 15 ✓
+├── maintenance : 20 / 20 ✓
+└── safety      :  7 / 10 ✓
+```
+
+---
+
 AutoHarness is a Rust library that automatically generates and optimizing code harnesses for LLM agents, following the approach described in the [AutoHarness paper](https://arxiv.org/abs/2603.03329). It uses tree search with Thompson sampling to iteratively refine harness code, achieving an average of 14.5 iterations to reach 100% legal action rate.
 
 ## 🚀 One-Sentence Quick Start (For OpenCode/CloudCode)
@@ -389,40 +460,6 @@ AutoHarness implements several security measures:
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 🤖 GOAL.md - Autonomous Improvement
-
-This project uses the [GOAL.md](docs/goal-md/GOAL-md-融合方案.md) pattern for autonomous code improvement. AI agents can use this to continuously improve project quality.
-
-### Quick Score Check
-
-```bash
-./scripts/score.sh
-```
-
-### Current Score
-
-```
-AutoHarness Code Quality: 100 / 100
-├── format      : 20 / 20 ✓
-├── clippy      : 20 / 20 ✓
-├── tests       : 25 / 25 ✓
-├── docs        : 15 / 15 ✓
-├── maintenance : 20 / 20 ✓
-└── safety      :  7 / 10 ✓
-```
-
-### For AI Agents
-
-Read the [GOAL.md Tutorial](docs/goal-md/tutorial/01-quick-start.md) to learn how to use this system.
-
-### Key Files
-
-| File | Description |
-|------|-------------|
-| [GOAL.md](GOAL.md) | Project improvement goals |
-| [CLAUDE.md](CLAUDE.md) | Agent instructions |
-| [template/GOAL.md](template/GOAL.md) | GOAL.md template |
-| [docs/goal-md/tutorial/](docs/goal-md/tutorial/) | Complete tutorial |
 
 ## 📄 License
 
