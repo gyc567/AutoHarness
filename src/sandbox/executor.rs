@@ -104,7 +104,9 @@ pub struct SandboxExecutor {
 impl SandboxExecutor {
     /// Create a new sandbox executor with the given configuration
     pub fn new(config: SandboxConfig) -> Result<Self, SandboxError> {
-        config.validate().map_err(|e| SandboxError::InvalidConfig(e.to_string()))?;
+        config
+            .validate()
+            .map_err(|e| SandboxError::InvalidConfig(e.to_string()))?;
         Ok(Self { config })
     }
 
@@ -130,10 +132,7 @@ impl SandboxExecutor {
         let temp_dir = std::env::temp_dir();
         let script_path = temp_dir.join(format!("autoharness_{}.sh", uuid::Uuid::new_v4()));
 
-        let script_content = format!(
-            "#!/bin/sh\n{}\n",
-            code
-        );
+        let script_content = format!("#!/bin/sh\n{}\n", code);
 
         std::fs::write(&script_path, script_content)
             .map_err(|e| SandboxError::SystemError(format!("Failed to write script: {}", e)))?;
@@ -145,8 +144,9 @@ impl SandboxExecutor {
                 .map_err(|e| SandboxError::SystemError(format!("Failed to get metadata: {}", e)))?
                 .permissions();
             perms.set_mode(0o755);
-            std::fs::set_permissions(&script_path, perms)
-                .map_err(|e| SandboxError::SystemError(format!("Failed to set permissions: {}", e)))?;
+            std::fs::set_permissions(&script_path, perms).map_err(|e| {
+                SandboxError::SystemError(format!("Failed to set permissions: {}", e))
+            })?;
         }
 
         let mut cmd = Command::new(&script_path);
@@ -166,7 +166,9 @@ impl SandboxExecutor {
             cmd.env("SANDBOX_NO_NETWORK", "1");
         }
 
-        let mut child = cmd.spawn().map_err(|e| SandboxError::SpawnFailed(e.to_string()))?;
+        let mut child = cmd
+            .spawn()
+            .map_err(|e| SandboxError::SpawnFailed(e.to_string()))?;
 
         if let Some(mut stdin) = child.stdin.take() {
             stdin
@@ -175,10 +177,12 @@ impl SandboxExecutor {
         }
 
         let timeout_duration = Duration::from_millis(self.config.time_limit_ms);
-        
+
         let child_id = child.id();
         let result = timeout(timeout_duration, async {
-            let output = child.wait_with_output().map_err(|e| SandboxError::SystemError(e.to_string()))?;
+            let output = child
+                .wait_with_output()
+                .map_err(|e| SandboxError::SystemError(e.to_string()))?;
             Ok::<_, SandboxError>(output)
         })
         .await;
@@ -252,20 +256,24 @@ impl SandboxExecutor {
             cmd.env(key, value);
         }
 
-        let mut child = cmd.spawn().map_err(|e| SandboxError::SpawnFailed(e.to_string()))?;
+        let mut child = cmd
+            .spawn()
+            .map_err(|e| SandboxError::SpawnFailed(e.to_string()))?;
 
         if let Some(input_data) = input {
             if let Some(mut stdin) = child.stdin.take() {
-                stdin
-                    .write_all(input_data.as_bytes())
-                    .map_err(|e| SandboxError::SystemError(format!("Failed to write input: {}", e)))?;
+                stdin.write_all(input_data.as_bytes()).map_err(|e| {
+                    SandboxError::SystemError(format!("Failed to write input: {}", e))
+                })?;
             }
         }
 
         let timeout_duration = Duration::from_millis(self.config.time_limit_ms);
         let child_id = child.id();
         let result = timeout(timeout_duration, async {
-            let output = child.wait_with_output().map_err(|e| SandboxError::SystemError(e.to_string()))?;
+            let output = child
+                .wait_with_output()
+                .map_err(|e| SandboxError::SystemError(e.to_string()))?;
             Ok::<_, SandboxError>(output)
         })
         .await;
@@ -315,7 +323,9 @@ impl SandboxExecutor {
 
     /// Update the sandbox configuration
     pub fn with_config(mut self, config: SandboxConfig) -> Result<Self, SandboxError> {
-        config.validate().map_err(|e| SandboxError::InvalidConfig(e.to_string()))?;
+        config
+            .validate()
+            .map_err(|e| SandboxError::InvalidConfig(e.to_string()))?;
         self.config = config;
         Ok(self)
     }
@@ -367,12 +377,7 @@ pub mod utils {
 
     /// Validate that code doesn't contain obvious security violations
     pub fn validate_code(code: &str) -> Result<(), SandboxError> {
-        let forbidden_patterns = [
-            "rm -rf /",
-            ":(){ :|:& };:",
-            "fork bomb",
-            "while true",
-        ];
+        let forbidden_patterns = ["rm -rf /", ":(){ :|:& };:", "fork bomb", "while true"];
 
         for pattern in &forbidden_patterns {
             if code.contains(pattern) {
@@ -513,7 +518,9 @@ mod tests {
         let config = SandboxConfig::new().with_time_limit(5000);
         let executor = SandboxExecutor::new(config).unwrap();
 
-        let result = executor.execute_command("echo", &["hello", "world"], None).await;
+        let result = executor
+            .execute_command("echo", &["hello", "world"], None)
+            .await;
         assert!(result.is_ok());
 
         let output = result.unwrap();
@@ -532,7 +539,10 @@ mod tests {
         match &result {
             Err(SandboxError::Timeout) => {}
             Err(SandboxError::ResourceLimitExceeded(_)) => {} // Output limit may hit first
-            _ => panic!("Expected Timeout or ResourceLimitExceeded, got: {:?}", result),
+            _ => panic!(
+                "Expected Timeout or ResourceLimitExceeded, got: {:?}",
+                result
+            ),
         }
     }
 }

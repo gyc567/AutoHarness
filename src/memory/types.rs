@@ -182,7 +182,8 @@ impl TemplateKnowledge {
     fn prune_success_patterns(&mut self, max: usize) {
         if self.success_patterns.len() > max {
             // Sort by count (descending) and keep top N
-            self.success_patterns.sort_by_key(|p| std::cmp::Reverse(p.count));
+            self.success_patterns
+                .sort_by_key(|p| std::cmp::Reverse(p.count));
             self.success_patterns.truncate(max);
         }
     }
@@ -190,7 +191,8 @@ impl TemplateKnowledge {
     fn prune_failure_seeds(&mut self, max: usize) {
         if self.failure_seeds.len() > max {
             // Sort by count (descending) and keep top N
-            self.failure_seeds.sort_by_key(|p| std::cmp::Reverse(p.count));
+            self.failure_seeds
+                .sort_by_key(|p| std::cmp::Reverse(p.count));
             self.failure_seeds.truncate(max);
         }
     }

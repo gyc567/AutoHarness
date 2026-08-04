@@ -14,7 +14,7 @@ use tracing::info;
 use tracing_subscriber::{fmt, EnvFilter};
 
 use autoharness::engine::synthesis::SimpleEvaluator;
-use autoharness::engine::{CodeSynthesisEngine, SynthesisConfig, Evaluator};
+use autoharness::engine::{CodeSynthesisEngine, Evaluator, SynthesisConfig};
 use autoharness::sandbox::{SandboxConfig, SandboxExecutor};
 
 /// CLI argument parser
@@ -144,11 +144,9 @@ enum ConfigAction {
 /// Initialize logging based on verbosity
 fn init_logging(verbose: bool) {
     let filter = if verbose {
-        EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| EnvFilter::new("debug"))
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("debug"))
     } else {
-        EnvFilter::try_from_default_env()
-            .unwrap_or_else(|_| EnvFilter::new("info"))
+        EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"))
     };
 
     fmt()
@@ -180,7 +178,10 @@ fn handle_synthesize(
     format: &str,
 ) -> Result<()> {
     let initial_code = get_code(code, file)?;
-    info!("Starting synthesis with {} chars of code", initial_code.len());
+    info!(
+        "Starting synthesis with {} chars of code",
+        initial_code.len()
+    );
 
     let config = SynthesisConfig::new()
         .with_max_iterations(max_iterations)
@@ -205,7 +206,7 @@ fn handle_synthesize(
                 }
             });
             println!("{}", serde_json::to_string_pretty(&response)?);
-        },
+        }
         _ => {
             println!("{}", result);
             if show_stats {
@@ -242,7 +243,7 @@ fn handle_evaluate(
                 "valid": evaluator.is_valid(&code),
             });
             println!("{}", serde_json::to_string_pretty(&response)?);
-        },
+        }
         _ => {
             println!("Score: {:.4}/1.0", score);
             println!("Valid: {}", evaluator.is_valid(&code));
@@ -251,15 +252,29 @@ fn handle_evaluate(
                 println!("\n--- Detailed Analysis ---");
                 let open_braces = code.matches('{').count();
                 let close_braces = code.matches('}').count();
-                println!("Braces: {} open, {} close - {}", 
-                    open_braces, close_braces,
-                    if open_braces == close_braces { "balanced" } else { "unbalanced" });
+                println!(
+                    "Braces: {} open, {} close - {}",
+                    open_braces,
+                    close_braces,
+                    if open_braces == close_braces {
+                        "balanced"
+                    } else {
+                        "unbalanced"
+                    }
+                );
 
                 let open_parens = code.matches('(').count();
                 let close_parens = code.matches(')').count();
-                println!("Parentheses: {} open, {} close - {}", 
-                    open_parens, close_parens,
-                    if open_parens == close_parens { "balanced" } else { "unbalanced" });
+                println!(
+                    "Parentheses: {} open, {} close - {}",
+                    open_parens,
+                    close_parens,
+                    if open_parens == close_parens {
+                        "balanced"
+                    } else {
+                        "unbalanced"
+                    }
+                );
 
                 println!("Contains 'fn': {}", code.contains("fn "));
                 println!("Length: {} chars", code.len());
@@ -280,7 +295,10 @@ async fn handle_run(
     format: &str,
 ) -> Result<()> {
     let code = get_code(code, file)?;
-    info!("Executing code in sandbox ({}MB, {}ms)", memory_limit, time_limit);
+    info!(
+        "Executing code in sandbox ({}MB, {}ms)",
+        memory_limit, time_limit
+    );
 
     let config = SandboxConfig::new()
         .with_memory_limit(memory_limit)
@@ -304,7 +322,7 @@ async fn handle_run(
                 "memory_used_mb": result.memory_used_mb,
             });
             println!("{}", serde_json::to_string_pretty(&response)?);
-        },
+        }
         _ => {
             println!("Exit code: {}", result.exit_code);
             if !result.stdout.is_empty() {
@@ -324,10 +342,7 @@ async fn handle_run(
 }
 
 /// Handle benchmark command
-fn handle_benchmark(
-    iterations: u32,
-    output: Option<PathBuf>,
-) -> Result<()> {
+fn handle_benchmark(iterations: u32, output: Option<PathBuf>) -> Result<()> {
     info!("Running benchmark with {} iterations", iterations);
 
     use std::time::Instant;
@@ -409,7 +424,7 @@ fn handle_config(action: ConfigAction) -> Result<()> {
             println!("  target_iterations: {}", config.target_iterations);
             println!("  min_improvement: {}", config.min_improvement);
             println!("  max_nodes: {}", config.max_nodes);
-        },
+        }
         ConfigAction::Validate { file } => {
             let path = file.unwrap_or_else(|| PathBuf::from("autoharness.toml"));
             if path.exists() {
@@ -419,7 +434,7 @@ fn handle_config(action: ConfigAction) -> Result<()> {
             } else {
                 anyhow::bail!("Config file not found: {}", path.display());
             }
-        },
+        }
         ConfigAction::Init { output } => {
             let path = output.unwrap_or_else(|| PathBuf::from("autoharness.toml"));
             let default_config = r#"# AutoHarness Configuration
@@ -448,7 +463,7 @@ level = "info"
 "#;
             std::fs::write(&path, default_config)?;
             println!("Created default configuration: {}", path.display());
-        },
+        }
     }
     Ok(())
 }
@@ -459,21 +474,46 @@ async fn main() -> Result<()> {
     init_logging(cli.verbose);
 
     match cli.command {
-        Commands::Synthesize { code, file, max_iterations, convergence, max_depth, stats } => {
-            handle_synthesize(code, file, max_iterations, convergence, max_depth, stats, &cli.format)?;
-        },
-        Commands::Evaluate { code, file, detailed } => {
+        Commands::Synthesize {
+            code,
+            file,
+            max_iterations,
+            convergence,
+            max_depth,
+            stats,
+        } => {
+            handle_synthesize(
+                code,
+                file,
+                max_iterations,
+                convergence,
+                max_depth,
+                stats,
+                &cli.format,
+            )?;
+        }
+        Commands::Evaluate {
+            code,
+            file,
+            detailed,
+        } => {
             handle_evaluate(code, file, detailed, &cli.format)?;
-        },
-        Commands::Run { code, file, input, memory_limit, time_limit } => {
+        }
+        Commands::Run {
+            code,
+            file,
+            input,
+            memory_limit,
+            time_limit,
+        } => {
             handle_run(code, file, input, memory_limit, time_limit, &cli.format).await?;
-        },
+        }
         Commands::Benchmark { iterations, output } => {
             handle_benchmark(iterations, output)?;
-        },
+        }
         Commands::Config { action } => {
             handle_config(action)?;
-        },
+        }
     }
 
     Ok(())
