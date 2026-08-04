@@ -1,0 +1,22 @@
+{
+  "name": "autoharness",
+  "description": "AutoHarness: GOAL.md autonomous improvement + codebase harness for AI agents. Set up GOAL.md scoring, run improvement loops, verify code before shipping, and create compounding agent loops.",
+  "version": "0.1.0",
+  "author": {
+    "name": "AutoHarness Team",
+    "url": "https://github.com/gyc567/AutoHarness"
+  },
+  "homepage": "https://github.com/gyc567/AutoHarness",
+  "license": "MIT",
+  "keywords": [
+    "autoharness",
+    "goal-md",
+    "autonomous-improvement",
+    "codebase-harness",
+    "loop-engineer",
+    "ai-agents",
+    "code-quality",
+    "verification",
+    "test-synthesis"
+  ]
+}

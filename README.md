@@ -34,11 +34,24 @@
 | [Advanced Patterns](docs/goal-md/tutorial/05-advanced-patterns-1.md) | Advanced techniques |
 | [Troubleshooting](docs/goal-md/tutorial/06-troubleshooting.md) | FAQ and solutions |
 
+### 🤖 Skills Tutorials (Agent Capabilities)
+
+| Document | Description |
+|----------|-------------|
+| [Overview](docs/skills/tutorial/00-overview.md) | Skills overview |
+| [Installation](docs/skills/tutorial/01-installation.md) | Setup guide |
+| [Setup GOAL.md](docs/skills/tutorial/02-setup-goal.md) | Initialize system |
+| [Score Check](docs/skills/tutorial/03-score-check.md) | Check score |
+| [Examples](docs/skills/tutorial/05-examples.md) | Real examples |
+
 #### 中文教程
 
 | 文档 | 说明 |
 |------|------|
-| [概述](docs/goal-md/tutorial-cn/00-overview.md) | GOAL.md 概念介绍 |
+| [概述](docs/skills/tutorial-cn/00-overview.md) | Skills 概述 |
+| [安装](docs/skills/tutorial-cn/01-installation.md) | 安装指南 |
+| [示例](docs/skills/tutorial-cn/05-examples.md) | 使用示例 |
+| [GOAL.md 概述](docs/goal-md/tutorial-cn/00-overview.md) | GOAL.md 概念介绍 |
 | [适应度函数](docs/goal-md/tutorial-cn/02a-fitness-function.md) | 评分脚本设计 |
 | [行动目录](docs/goal-md/tutorial-cn/02b-action-catalog.md) | 行动目录设计 |
 | [创建第一个 GOAL.md](docs/goal-md/tutorial-cn/03-create-goal.md) | 完整示例 |
@@ -54,6 +67,31 @@
 | [CLAUDE.md](CLAUDE.md) | AI Agent instructions |
 | [template/GOAL.md](template/GOAL.md) | GOAL.md template |
 | [examples/](examples/) | Complete examples |
+
+### 🤖 Claude Code Skills (Agent Capabilities)
+
+Integrate with AI Builder Club's skills ecosystem for enhanced agent capabilities:
+
+| Skill | Description |
+|-------|-------------|
+| `/setup-goal` | Initialize GOAL.md system for any project |
+| `/score-check` | Check current project score |
+| `/improvement-loop` | Run one improvement iteration |
+| `/new-goal-loop` | Create a new workstream/loop |
+| `/context-audit` | Audit agent context quality |
+| `/flow-diagram` | Generate flow diagrams |
+
+**Installation:**
+```bash
+# Clone and use directly
+git clone https://github.com/gyc567/AutoHarness.git
+cd AutoHarness/skills
+
+# Or use the skills directory path in your agent
+export CLAUDE_SKILLS_DIR="./AutoHarness/skills"
+```
+
+See [Skills Integration Plan](docs/goal-md/skills-integration/) for detailed design.
 
 ### 📊 Current Score
 

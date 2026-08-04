@@ -1,0 +1,37 @@
+{
+  "name": "autoharness",
+  "owner": {
+    "name": "AutoHarness",
+    "url": "https://github.com/gyc567/AutoHarness"
+  },
+  "metadata": {
+    "description": "GOAL.md autonomous improvement + codebase harness for AI agents",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "goal-md",
+      "source": "./skills/goal-md",
+      "description": "GOAL.md autonomous improvement system",
+      "category": "engineering"
+    },
+    {
+      "name": "codebase-harness",
+      "source": "./skills/codebase-harness",
+      "description": "Codebase harness for agent-ready development",
+      "category": "engineering"
+    },
+    {
+      "name": "loops",
+      "source": "./skills/loops",
+      "description": "Compounding agent loops",
+      "category": "automation"
+    },
+    {
+      "name": "utilities",
+      "source": "./skills/utilities",
+      "description": "Utility skills",
+      "category": "utilities"
+    }
+  ]
+}
