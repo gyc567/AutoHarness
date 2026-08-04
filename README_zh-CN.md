@@ -379,9 +379,45 @@ AutoHarness 实现了多项安全措施：
 4. **超时强制**：超时的进程将被终止
 5. **输入验证**：执行前验证代码
 
-## 贡献
+## 🤝 贡献
 
 欢迎贡献！请随时提交 Pull Request。
+
+## 🤖 GOAL.md - 自主改进
+
+本项目使用 [GOAL.md](docs/goal-md/GOAL-md-融合方案.md) 模式实现代码自主改进。
+
+### 快速查看分数
+
+```bash
+./scripts/score.sh
+```
+
+### 当前分数
+
+```
+AutoHarness 代码质量: 100 / 100
+├── format      : 20 / 20 ✓
+├── clippy      : 20 / 20 ✓
+├── tests       : 25 / 25 ✓
+├── docs        : 15 / 15 ✓
+├── maintenance : 20 / 20 ✓
+└── safety      :  7 / 10 ✓
+```
+
+### 中文教程
+
+- [5 分钟快速开始](docs/goal-md/tutorial-cn/01-quick-start.md)
+- [完整教程索引](docs/goal-md/tutorial-cn/README.md)
+
+### 关键文件
+
+| 文件 | 说明 |
+|------|------|
+| [GOAL.md](GOAL.md) | 项目改进目标 |
+| [CLAUDE.md](CLAUDE.md) | Agent 指南 |
+| [template/GOAL.md](template/GOAL.md) | GOAL.md 模板 |
+| [docs/goal-md/tutorial-cn/](docs/goal-md/tutorial-cn/) | 中文教程 |
 
 ## 许可证
 
