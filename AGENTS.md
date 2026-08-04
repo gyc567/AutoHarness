@@ -124,6 +124,17 @@ cargo bench -- synthesis
 - **Indentation**: 4 spaces (not tabs)
 - **Trailing commas**: Always use trailing commas in multi-line contexts
 
+### Design Principles
+
+- **移除过时的路径**: 只发布当前代码
+- **简单满足需求**: 使用最简单的代码来满足当前需求
+- **分层构建**: 先发布最小的工作版本。然后在工作产品基础上添加
+- **保持模块分离**: 职责清晰
+- **优先成熟库**: 优先选择成熟的库来简化或稳定
+- **先检查现有资源**: 先检查现有的依赖、文档和类型
+- **长期设计**: 为长期设计
+- **研究验证产品**: 研究经过验证的产品。采用它们的模式
+
 ### Naming Conventions
 
 | Element | Convention | Example |
