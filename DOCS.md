@@ -38,6 +38,15 @@
 - [CLAUDE.md](CLAUDE.md) - Agent 指导文件
 - [template/GOAL.md](template/GOAL.md) - GOAL.md 可复用模板
 
+#### GOAL.md 教程
+
+- [教程索引](docs/goal-md/tutorial/README.md) - 完整学习路径
+- [5 分钟快速开始](docs/goal-md/tutorial/01-quick-start.md)
+- [创建第一个 GOAL.md](docs/goal-md/tutorial/03-create-goal.md)
+- [多 Agent 协作](docs/goal-md/tutorial/04-multi-agent.md)
+- [进阶模式](docs/goal-md/tutorial/05-advanced-patterns-1.md)
+- [常见问题](docs/goal-md/tutorial/06-troubleshooting.md)
+
 #### 示例
 
 - [Rust 项目示例](examples/01-rust-code-quality.md)
