@@ -146,7 +146,11 @@ impl TemplateKnowledge {
         self.last_updated = Utc::now();
 
         // Merge with existing or add new
-        if let Some(existing) = self.success_patterns.iter_mut().find(|p| p.pattern == pattern.pattern) {
+        if let Some(existing) = self
+            .success_patterns
+            .iter_mut()
+            .find(|p| p.pattern == pattern.pattern)
+        {
             existing.record_success();
         } else {
             self.success_patterns.push(pattern);
@@ -161,7 +165,11 @@ impl TemplateKnowledge {
         self.last_updated = Utc::now();
 
         // Merge with existing or add new
-        if let Some(existing) = self.failure_seeds.iter_mut().find(|s| s.description == seed.description) {
+        if let Some(existing) = self
+            .failure_seeds
+            .iter_mut()
+            .find(|s| s.description == seed.description)
+        {
             existing.record_occurrence();
         } else {
             self.failure_seeds.push(seed);
@@ -174,7 +182,7 @@ impl TemplateKnowledge {
     fn prune_success_patterns(&mut self, max: usize) {
         if self.success_patterns.len() > max {
             // Sort by count (descending) and keep top N
-            self.success_patterns.sort_by(|a, b| b.count.cmp(&a.count));
+            self.success_patterns.sort_by_key(|p| std::cmp::Reverse(p.count));
             self.success_patterns.truncate(max);
         }
     }
@@ -182,7 +190,7 @@ impl TemplateKnowledge {
     fn prune_failure_seeds(&mut self, max: usize) {
         if self.failure_seeds.len() > max {
             // Sort by count (descending) and keep top N
-            self.failure_seeds.sort_by(|a, b| b.count.cmp(&a.count));
+            self.failure_seeds.sort_by_key(|p| std::cmp::Reverse(p.count));
             self.failure_seeds.truncate(max);
         }
     }
@@ -266,7 +274,11 @@ impl MemoryContent {
         principle.frequency = 1;
         principle.success_count = 1;
 
-        if let Some(existing) = self.principles.iter_mut().find(|p| p.text == principle.text) {
+        if let Some(existing) = self
+            .principles
+            .iter_mut()
+            .find(|p| p.text == principle.text)
+        {
             existing.record_use(true);
         } else {
             self.principles.push(principle);
@@ -278,7 +290,8 @@ impl MemoryContent {
 
     fn prune_principles(&mut self, max: usize) {
         if self.principles.len() > max {
-            self.principles.sort_by(|a, b| b.frequency.cmp(&a.frequency));
+            self.principles
+                .sort_by_key(|p| std::cmp::Reverse(p.frequency));
             self.principles.truncate(max);
         }
     }
