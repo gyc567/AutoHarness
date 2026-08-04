@@ -30,6 +30,12 @@
 - [合成引擎原理](docs/internals/synthesis-engine.md)
 - [状态机设计](docs/internals/state-machine.md)
 
+### GOAL.md (自主改进)
+
+- [GOAL.md 融合方案](docs/goal-md/GOAL-md-融合方案.md)
+- [快速开始](docs/goal-md/快速开始.md)
+- [API 参考](docs/goal-md/API-参考.md)
+
 ---
 
 ## 使用说明
