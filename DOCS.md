@@ -25,6 +25,25 @@
 - [性能调优规范](docs/guides/performance-tuning.md)
 - [代码审查规范](docs/guides/code-review.md)
 
+### Skills (技能系统)
+
+- [Skills 整合方案](docs/goal-md/skills-integration/README.md) - AI-Builder-Club 技能整合
+- [Skills 审计报告](docs/goal-md/skills-integration/00-audit-report.md) - 整合状态
+- [Skills 概述](docs/goal-md/skills-integration/01-overview.md) - 设计概览
+- [Plugin 配置](docs/goal-md/skills-integration/02-plugin-setup.md) - Claude Code 插件配置
+- [GOAL.md Skills](docs/goal-md/skills-integration/03-goal-md-skills.md) - 自主改进系统
+- [Codebase Harness](docs/goal-md/skills-integration/04-codebase-harness.md) - 代码库基础设施
+- [实施计划](docs/goal-md/skills-integration/05-implementation-plan.md) - 实施步骤
+
+#### Skills 教程
+
+- [Skills 教程索引](docs/skills/tutorial/README.md)
+- [安装指南](docs/skills/tutorial/01-installation.md)
+- [设置 GOAL](docs/skills/tutorial/02-setup-goal.md)
+- [评分检查](docs/skills/tutorial/03-score-check.md)
+- [改进循环](docs/skills/tutorial/04-improvement-loop.md)
+- [示例](docs/skills/tutorial/05-examples.md)
+
 ### Internals (内部实现)
 
 - [合成引擎原理](docs/internals/synthesis-engine.md)
@@ -65,6 +84,7 @@ docs/
 ├── architecture/     # 一级: 架构
 ├── api/              # 一级: API
 ├── guides/           # 一级: 指南
+├── skills/           # 一级: 技能系统
 └── internals/        # 一级: 内部实现
 ```
 
@@ -118,4 +138,36 @@ docs/
 
 ---
 
-**Last Updated**: 2026-08-04
+## Skills 系统说明
+
+AutoHarness Skills 基于 [AI-Builder-Club/skills](https://github.com/AI-Builder-Club/skills) 整合而来。
+
+### 当前整合状态
+
+| 类别 | 数量 | 状态 |
+|------|------|------|
+| GOAL.md Skills | 3 | ✅ 100% |
+| Codebase Harness | 4 | ✅ 100% |
+| Loops | 1 | ✅ 100% |
+| Utilities | 3 | ✅ 100% |
+| **总计** | **11** | **100%** |
+
+### 可用 Skills
+
+| Skill | 用途 |
+|-------|------|
+| `/setup-goal` | 初始化 GOAL.md 系统 |
+| `/score-check` | 检查项目分数 |
+| `/improvement-loop` | 执行改进循环 |
+| `/setup-harness` | 设置代码库 harness |
+| `/dev-local` | 本地开发环境 |
+| `/e2e-setup` | E2E 测试套件 |
+| `/verify` | 验证代码 |
+| `/new-goal-loop` | 创建新循环 |
+| `/open-agent-teams` | 多 Agent 协作 |
+| `/context-audit` | 上下文审计 |
+| `/flow-diagram` | 流程图生成 |
+
+---
+
+**Last Updated**: 2026-08-05
