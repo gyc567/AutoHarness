@@ -11,8 +11,10 @@ This plugin provides AI agents with the capabilities to:
 - **Score projects** - Measure code quality with fitness functions
 - **Run improvement loops** - Execute iterative improvements
 - **Set up codebase harness** - Make any repo agent-ready
+- **E2E testing** - End-to-end test suite setup
 - **Verify code** - Validate changes before shipping
 - **Create agent loops** - Build compounding workstreams
+- **Agent delegation** - Delegate to other CLI agents
 - **Audit context** - Optimize agent instructions
 - **Generate diagrams** - Visualize workflows
 
@@ -42,6 +44,7 @@ git clone https://github.com/gyc567/AutoHarness.git
 |-------|-------------|--------|
 | `/setup-harness` | Make repo agent-ready (master) | ✅ |
 | `/dev-local` | Set up one-command dev environment | ✅ |
+| `/e2e-setup` | Set up E2E test suite | ✅ |
 | `/verify` | Verify code before shipping | ✅ |
 
 ### Agent Loops
@@ -54,6 +57,7 @@ git clone https://github.com/gyc567/AutoHarness.git
 
 | Skill | Description | Status |
 |-------|-------------|--------|
+| `/open-agent-teams` | Delegate to other CLI agents | ✅ |
 | `/context-audit` | Audit agent context | ✅ |
 | `/flow-diagram` | Generate flow diagrams | ✅ |
 
@@ -70,7 +74,14 @@ git clone https://github.com/gyc567/AutoHarness.git
 
 1. Run `/setup-harness` to make the repo agent-ready
 2. Use `/dev-local` for development
-3. Use `/verify` before opening a PR
+3. Use `/e2e-setup` for test coverage
+4. Use `/verify` before opening a PR
+
+### Multi-Agent Workflow
+
+1. Run `/open-agent-teams` to set up delegation
+2. Delegate tasks to other CLI agents
+3. Review results and iterate
 
 ## Structure
 
@@ -79,17 +90,19 @@ skills/
 ├── .claude-plugin/           # Plugin configuration
 │   ├── plugin.json
 │   └── marketplace.json
-├── goal-md/                  # GOAL.md system
+├── goal-md/                   # GOAL.md system
 │   ├── setup-goal/
 │   ├── score-check/
 │   └── improvement-loop/
-├── codebase-harness/         # Codebase harness (NEW)
+├── codebase-harness/          # Codebase harness
 │   ├── setup-harness/
 │   ├── dev-local/
+│   ├── e2e-setup/           # NEW
 │   └── verify/
-├── loops/                    # Agent loops
+├── loops/                     # Agent loops
 │   └── new-goal-loop/
-└── utilities/                # Utilities
+└── utilities/                 # Utilities
+    ├── open-agent-teams/      # NEW
     ├── context-audit/
     └── flow-diagram/
 ```
@@ -99,6 +112,15 @@ skills/
 - [Skills Integration Plan](../docs/goal-md/skills-integration/) - Detailed design
 - [GOAL.md Tutorials](../docs/goal-md/tutorial/) - Learning resources
 - [Audit Report](../docs/goal-md/skills-integration/00-audit-report.md) - Implementation status
+
+## Requirements
+
+| Tool | Required For | Status |
+|------|--------------|--------|
+| Claude Code | All skills | Required |
+| Git | All skills | Required |
+| tmux | open-agent-teams | Optional |
+| Playwright | e2e-setup | Optional |
 
 ## License
 

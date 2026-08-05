@@ -1,0 +1,267 @@
+#!/bin/bash
+# tdel - Team Delegate Helper
+# Manages agent sessions in detached tmux sessions
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AGENT_DIR="/tmp/agent-delegate"
+
+usage() {
+    echo "tdel - Team Delegate Helper"
+    echo ""
+    echo "Usage: tdel <command> [args]"
+    echo ""
+    echo "Commands:"
+    echo "  start <session> --agent <name> --prompt <text>"
+    echo "  wait <session> [timeout-sec]"
+    echo "  send <session> <message>"
+    echo "  peek <session> [lines]"
+    echo "  status"
+    echo "  stop <session>"
+    echo "  key <session> <keys>"
+    echo ""
+    echo "Examples:"
+    echo "  tdel start my-task --agent claude --prompt 'Fix the bug'"
+    echo "  tdel wait my-task 300"
+    echo "  tdel send my-task 'Now add tests'"
+    echo "  tdel peek my-task 50"
+    exit 1
+}
+
+cmd_start() {
+    local session="$1"
+    local agent="$2"
+    local prompt="$3"
+    
+    if [[ -z "$session" ]] || [[ -z "$agent" ]] || [[ -z "$prompt" ]]; then
+n        echo "Error: session, agent, and prompt required"
+        exit 1
+    fi
+    
+    local session_dir="$AGENT_DIR/$session"
+    mkdir -p "$session_dir"
+    
+    # Flatten prompt to one line
+    local flat_prompt=$(echo "$prompt" | tr '\n' ' ')
+    
+    # Build agent command
+    case "$agent" in
+        claude)
+            local cmd="claude --dangerously-skip-permissions -p '$flat_prompt'"
+            ;;
+        codex)
+            local cmd="codex --dangerously-bypass-approvals-and-sandbox -c '$flat_prompt'"
+            ;;
+        grok)
+            local cmd="grok --always-approve -p '$flat_prompt'"
+            ;;
+        pi)
+            local cmd="pi '$flat_prompt'"
+            ;;
+        *)
+            local cmd="$agent '$flat_prompt'"
+            ;;
+    esac
+    
+    # Save prompt and result files
+    echo "$prompt" > "$session_dir/prompt.md"
+    : > "$session_dir/result.md"
+    
+    # Start tmux session
+    tmux new-session -d -s "$session" "$cmd; touch $session_dir/done"
+    
+    echo "Started session: $session"
+    echo "Agent: $agent"
+    echo "Session dir: $session_dir"
+}
+
+cmd_wait() {
+    local session="$1"
+    local timeout="${2:-300}"
+    
+    if [[ -z "$session" ]]; then
+        echo "Error: session required"
+        exit 1
+    fi
+    
+    local session_dir="$AGENT_DIR/$session"
+    local done_file="$session_dir/done"
+    
+    if [[ ! -d "$session_dir" ]]; then
+        echo "Error: session not found: $session"
+        exit 1
+    fi
+    
+    echo "Waiting for session: $session (timeout: ${timeout}s)"
+    
+    local start_time=$(date +%s)
+    while [[ ! -f "$done_file" ]]; do
+        local now=$(date +%s)
+        local elapsed=$((now - start_time))
+        
+        if [[ $elapsed -ge $timeout ]]; then
+            echo "Timeout after ${timeout}s"
+            echo "Last 20 lines of pane:"
+            tmux capture-pane -t "$session" -p | tail -20
+            exit 124
+        fi
+        
+        # Check if session is still alive
+        if ! tmux has-session -t "$session" 2>/dev/null; then
+            echo "Session died unexpectedly"
+            exit 1
+        fi
+        
+        sleep 5
+    done
+    
+    # Read result
+    echo ""
+    echo "=== Session Complete ==="
+    if [[ -f "$session_dir/result.md" ]]; then
+        cat "$session_dir/result.md"
+    fi
+    echo ""
+    echo "Done file found: $done_file"
+}
+
+cmd_send() {
+    local session="$1"
+    local message="$2"
+    
+    if [[ -z "$session" ]] || [[ -z "$message" ]]; then
+        echo "Error: session and message required"
+        exit 1
+    fi
+    
+    local session_dir="$AGENT_DIR/$session"
+    
+    # Flatten and escape message
+    local flat_msg=$(echo "$message" | tr '\n' ' ')
+    
+    # Send keys to tmux session
+    tmux send-keys -t "$session" "$flat_msg" Enter
+    
+    echo "Sent to $session: $message"
+}
+
+cmd_peek() {
+    local session="$1"
+    local lines="${2:-50}"
+    
+    if [[ -z "$session" ]]; then
+        echo "Error: session required"
+        exit 1
+    fi
+    
+    tmux capture-pane -t "$session" -p | tail -"$lines"
+}
+
+cmd_status() {
+    echo "=== Agent Sessions ==="
+    echo ""
+    
+    if tmux list-sessions 2>/dev/null; then
+        echo ""
+        echo "Session states:"
+        for session_dir in "$AGENT_DIR"/*/; do
+            if [[ -d "$session_dir" ]]; then
+                local session=$(basename "$session_dir")
+                local done_file="$session_dir/done"
+                local status="running"
+                
+                if [[ -f "$done_file" ]]; then
+                    status="done"
+                fi
+                
+                echo "  $session: $status"
+            fi
+        done
+    else
+        echo "No active sessions"
+    fi
+    
+    echo ""
+    echo "Session dir: $AGENT_DIR"
+}
+
+cmd_stop() {
+    local session="$1"
+    
+    if [[ -z "$session" ]]; then
+        echo "Error: session required"
+        exit 1
+    fi
+    
+    tmux kill-session -t "$session" 2>/dev/null || true
+    rm -rf "$AGENT_DIR/$session"
+    
+    echo "Stopped session: $session"
+}
+
+cmd_key() {
+    local session="$1"
+    local keys="$2"
+    
+    if [[ -z "$session" ]] || [[ -z "$keys" ]]; then
+        echo "Error: session and keys required"
+        exit 1
+    fi
+    
+    tmux send-keys -t "$session" "$keys"
+    echo "Sent keys to $session: $keys"
+}
+
+# Main
+COMMAND="${1:-usage}"
+shift || true
+
+case "$COMMAND" in
+    start)
+        # Parse: start <session> --agent <name> --prompt <text>
+        local session="$1"
+        shift
+        local agent=""
+        local prompt=""
+        
+        while [[ $# -gt 0 ]]; do
+            case "$1" in
+                --agent)
+                    agent="$2"
+                    shift 2
+                    ;;
+                --prompt)
+                    prompt="$2"
+                    shift 2
+                    ;;
+                *)
+                    shift
+                    ;;
+            esac
+        done
+        
+        cmd_start "$session" "$agent" "$prompt"
+        ;;
+    wait)
+        cmd_wait "$1" "$2"
+        ;;
+    send)
+        cmd_send "$1" "$2"
+        ;;
+    peek)
+        cmd_peek "$1" "$2"
+        ;;
+    status)
+        cmd_status
+        ;;
+    stop)
+        cmd_stop "$1"
+        ;;
+    key)
+        cmd_key "$1" "$2"
+        ;;
+    *)
+        usage
+        ;;
+esac
