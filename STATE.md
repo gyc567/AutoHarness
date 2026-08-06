@@ -29,9 +29,9 @@ P0 立刻修：
 - [x] **[H3]** ~~`generate_run_id()` 破 schema~~ — 已修复：`YYYYMMDDTHHMMSSZ-NNN`（`4591bae`）
 
 P1 本周：
-- [ ] **[C3]** `use_seccomp/use_cgroups/use_namespaces: true` 默认但**未实际应用** — 误导性配置
-- [ ] **[C4]** `working_directory` 不验证 — sandbox 失效风险
-- [ ] **[H4]** `gate.yaml` 缺 8 个 src/ 路径 denylist（含 sandbox/executor.rs）
+- [x] **[C3]** ~~`use_seccomp/use_cgroups/use_namespaces: true` 默认但**未实际应用**~~ — 已修复：默认值改为 `false` + validate() 警告 + struct 文档说明（`4591bae` 后追加）
+- [x] **[C4]** ~~`working_directory` 不验证~~ — 已修复：`validate()` 中增加绝对路径、存在性、`..` 检查（`4591bae` 后追加）
+- [x] **[H4]** ~~`gate.yaml` 缺 8 个 src/ 路径 denylist~~ — 已修复：补充 `executor.rs config.rs limits.rs search.rs error.rs state.rs loop/mod.rs loop/gate.rs`（`4591bae` 后追加）
 
 P2 Phase 4：
 - [ ] **[C5]** `validate_code` 黑名单过弱

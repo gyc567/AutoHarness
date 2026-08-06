@@ -12,6 +12,14 @@ denylist:
   - "src/engine/synthesis.rs"   # 核心引擎改动需 review
   - "src/engine/thompson.rs"    # 采样逻辑改动需 review
   - "src/main.rs"               # CLI 入口改动需 review
+  - "src/sandbox/executor.rs"  # shell sandbox 核心，任何改动需 review（H4 补充）
+  - "src/sandbox/config.rs"    # sandbox 配置（H4 补充）
+  - "src/sandbox/limits.rs"    # 资源限制核心（H4 补充）
+  - "src/engine/search.rs"     # 核心搜索算法（H4 补充）
+  - "src/core/error.rs"        # 核心错误类型（H4 补充）
+  - "src/core/state.rs"        # 核心状态管理（H4 补充）
+  - "src/loop/mod.rs"          # loop 核心模块（H4 补充）
+  - "src/loop/gate.rs"         # gate 门禁逻辑（H4 补充）
   - "gate.yaml"                 # 门禁配置本身只能人类改
   - "loop-constraints.md"       # 强制约束本身只能人类改
 

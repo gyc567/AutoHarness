@@ -6,6 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use tracing;
 
 /// Default memory limit in megabytes (256 MB)
 pub const DEFAULT_MEMORY_LIMIT_MB: u64 = 256;
@@ -105,6 +106,14 @@ pub const DEFAULT_ALLOWED_SYSCALLS: &[&str] = &[
 /// This struct defines all security and resource limits for sandboxed code execution.
 /// Use `SandboxConfig::default()` for secure defaults or build custom configurations
 /// using the builder pattern.
+///
+/// ## Security options (planned features)
+///
+/// The following options are declared but **not yet implemented** in the executor:
+/// - `use_seccomp` — seccomp syscall filtering (planned)
+/// - `use_cgroups` — cgroups resource limiting (planned)
+/// - `use_namespaces` — Linux namespace isolation (planned)
+///   Setting these to true has no effect until the executor is updated.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SandboxConfig {
     /// Maximum memory allowed in megabytes
@@ -167,9 +176,9 @@ impl Default for SandboxConfig {
             environment_variables: Vec::new(),
             mount_tmp: true,
             read_only_dirs: Vec::new(),
-            use_seccomp: true,
-            use_cgroups: true,
-            use_namespaces: true,
+            use_seccomp: false,
+            use_cgroups: false,
+            use_namespaces: false,
         }
     }
 }
@@ -298,6 +307,45 @@ impl SandboxConfig {
             ));
         }
 
+        // C3: warn that planned security features are not implemented
+        if self.use_seccomp || self.use_cgroups || self.use_namespaces {
+            tracing::warn!(
+                "seccomp={}, cgroups={}, namespaces={} — these isolation features \
+                are declared but not yet implemented in the executor. \
+                They have no effect.",
+                self.use_seccomp,
+                self.use_cgroups,
+                self.use_namespaces
+            );
+        }
+
+        // C4: validate working_directory path
+        if let Some(ref dir) = self.working_directory {
+            // Must be an absolute path
+            if !dir.is_absolute() {
+                return Err(ConfigError::InvalidValue(format!(
+                    "working_directory must be absolute, got: {:?}",
+                    dir
+                )));
+            }
+            // Must exist as a directory
+            if !dir.is_dir() {
+                return Err(ConfigError::InvalidValue(format!(
+                    "working_directory does not exist or is not a directory: {:?}",
+                    dir
+                )));
+            }
+            // Must not contain path traversal components
+            for component in dir.components() {
+                if let std::path::Component::ParentDir = component {
+                    return Err(ConfigError::InvalidValue(format!(
+                        "working_directory must not contain '..' components: {:?}",
+                        dir
+                    )));
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -346,9 +394,11 @@ mod tests {
         assert_eq!(config.time_limit_ms, DEFAULT_TIME_LIMIT_MS);
         assert_eq!(config.max_file_descriptors, DEFAULT_MAX_FILE_DESCRIPTORS);
         assert!(!config.enable_network);
-        assert!(config.use_seccomp);
-        assert!(config.use_cgroups);
-        assert!(config.use_namespaces);
+        // C3: these are planned features, not yet implemented; defaults are false
+        assert!(!config.use_seccomp);
+        assert!(!config.use_cgroups);
+        assert!(!config.use_namespaces);
+        assert!(config.working_directory.is_none());
     }
 
     #[test]
@@ -376,6 +426,42 @@ mod tests {
 
         let invalid_config = SandboxConfig::new().with_memory_limit(0);
         assert!(invalid_config.validate().is_err());
+    }
+
+    #[test]
+    fn test_working_directory_validation() {
+        use std::path::PathBuf;
+
+        // Valid: existing absolute directory
+        let valid_dir = PathBuf::from("/tmp");
+        let config = SandboxConfig::new().with_working_directory(valid_dir);
+        assert!(
+            config.validate().is_ok(),
+            "existing /tmp dir should be valid"
+        );
+
+        // Invalid: relative path
+        let rel_config = SandboxConfig::new().with_working_directory(PathBuf::from("mydir"));
+        let err = rel_config.validate().unwrap_err();
+        assert!(matches!(err, ConfigError::InvalidValue(ref msg) if msg.contains("absolute")));
+
+        // Invalid: path traversal (ParentDir component, but existing dir)
+        let escape_config = SandboxConfig::new().with_working_directory(PathBuf::from("/tmp/.."));
+        let err = escape_config.validate().unwrap_err();
+        assert!(matches!(err, ConfigError::InvalidValue(ref msg) if msg.contains("'..'")));
+    }
+
+    #[test]
+    fn test_working_directory_validation_nonexistent() {
+        use std::path::PathBuf;
+
+        // Invalid: does not exist
+        let config =
+            SandboxConfig::new().with_working_directory(PathBuf::from("/nonexistent_dir_12345"));
+        let err = config.validate().unwrap_err();
+        assert!(
+            matches!(err, ConfigError::InvalidValue(ref msg) if msg.contains("does not exist"))
+        );
     }
 
     #[test]
