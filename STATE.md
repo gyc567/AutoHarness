@@ -16,6 +16,34 @@
 
 <!-- Loop appends above -->
 
+### 🚨 [audit-2026-08-06] CRITICAL findings (6 项)
+
+> **报告**：`docs/audit/code-audit-2026-08-06.md`
+> **执行者**：loop-engineering audit (Maker + Checker + Critic)
+> **Score gate**：维持 100/100（未修改任何代码）
+
+P0 立刻修：
+- [ ] **[C1]** `src/sandbox/executor.rs:135` shell 注入 — 用户 code 直接拼入 shell 脚本后执行
+- [ ] **[C2]** `shell_escape()` 字符集不全 — 漏 `& ; | > < ( )` 等 metacharacter
+- [ ] **[H2]** `chrono_like_now()` 输出 `ts-{secs}` 而非 ISO 8601 — `loop-run-log.jsonl` schema 破坏
+- [ ] **[H3]** `generate_run_id()` 输出 `run-{secs}-{n}` 而非 `YYYYMMDDTHHMMSSZ-NNN`
+
+P1 本周：
+- [ ] **[C3]** `use_seccomp/use_cgroups/use_namespaces: true` 默认但**未实际应用** — 误导性配置
+- [ ] **[C4]** `working_directory` 不验证 — sandbox 失效风险
+- [ ] **[H4]** `gate.yaml` 缺 8 个 src/ 路径 denylist（含 sandbox/executor.rs）
+
+P2 Phase 4：
+- [ ] **[C5]** `validate_code` 黑名单过弱
+- [ ] **[H1]** 7 个 harness template 是 stub（含 `TODO`）
+- [ ] **[M1]** 3 个未使用依赖（`duct`, `notify`, `metrics`）
+
+P3 未来：
+- [ ] **[M2]** README badge 数据陈旧 (88/100 → 实际 93/100)
+- [ ] **[M3]** 无 CHANGELOG.md
+- [ ] **[LE2]** LOOP.md vs STATE.md 责任重叠
+- [ ] **[LE4]** kill switch 用 grep 不稳健
+
 ## High Priority (loop is acting or waiting on human)
 
 <!-- Loop appends above -->
