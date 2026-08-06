@@ -324,6 +324,30 @@ Before completing a task, verify:
 - [ ] Uses immutable patterns where possible
 ---
 
+### Code Norms (Ponytail)
+
+Before writing any code, run the **7-level ladder** — stop at the first rung that holds:
+
+1. **Does this need to exist?** YAGNI → skip, say so in one line.
+2. **Already in this codebase?** → reuse it.
+3. **Stdlib does it?** → use it.
+4. **Native platform feature?** → use it (CSS over JS, DB constraint over app code).
+5. **Already-installed dependency?** → use it, never add a new one.
+6. **Can it be one line?** → one line.
+7. **Only then:** the minimum code that works.
+
+**Rules**:
+- No unrequested abstractions (no interface with one impl, no factory for one product).
+- Deletion over addition. Boring over clever.
+- Mark deliberate simplifications with `ponytail:` comment: `// ponytail: global lock, per-account locks if throughput matters`.
+- Shortest working diff wins — but only once you understand the problem. The smallest change in the wrong place isn't lazy, it's a second bug.
+- Never simplify away: input validation at trust boundaries, error handling that prevents data loss, security measures.
+
+> **Source**: [ponytail](https://github.com/DietrichGebert/ponytail) (MIT, /ponytail skill installed)
+> **Invoke**: `/ponytail` activates the ladder for the session; `/ponytail-review` reviews a diff; `/ponytail-audit` audits the whole repo.
+
+---
+
 ## 5. Rust Coding Standards (基于 Microsoft Rust Guidelines)
 
 本项目遵循 [Microsoft Rust Guidelines](https://github.com/microsoft/rust-guidelines) 规范。
