@@ -20,13 +20,13 @@
 
 > **报告**：`docs/audit/code-audit-2026-08-06.md`
 > **执行者**：loop-engineering audit (Maker + Checker + Critic)
-> **Score gate**：维持 100/100（未修改任何代码）
+> **Score gate**：100/100 维持（C1+C2+H2+H3 修复后无退化）
 
 P0 立刻修：
-- [ ] **[C1]** `src/sandbox/executor.rs:135` shell 注入 — 用户 code 直接拼入 shell 脚本后执行
-- [ ] **[C2]** `shell_escape()` 字符集不全 — 漏 `& ; | > < ( )` 等 metacharacter
-- [ ] **[H2]** `chrono_like_now()` 输出 `ts-{secs}` 而非 ISO 8601 — `loop-run-log.jsonl` schema 破坏
-- [ ] **[H3]** `generate_run_id()` 输出 `run-{secs}-{n}` 而非 `YYYYMMDDTHHMMSSZ-NNN`
+- [x] **[C1]** `src/sandbox/executor.rs:135` ~~shell 注入~~ — 已修复：validate_code 在写盘前执行（`4591bae`）
+- [x] **[C2]** ~~`shell_escape()` 字符集不全~~ — 已修复：19 字符覆盖（`4591bae`）
+- [x] **[H2]** ~~`chrono_like_now()` 输出 `ts-{secs}` 而非 ISO 8601~~ — 已修复：`Utc::now()` 替换（`4591bae`）
+- [x] **[H3]** ~~`generate_run_id()` 破 schema~~ — 已修复：`YYYYMMDDTHHMMSSZ-NNN`（`4591bae`）
 
 P1 本周：
 - [ ] **[C3]** `use_seccomp/use_cgroups/use_namespaces: true` 默认但**未实际应用** — 误导性配置
