@@ -58,6 +58,16 @@ P3 未来：
 
 <!-- Loop appends above -->
 
+- High-noise: dependabot PRs surfaced again — add to ignore list
+- False positives: 1 CI flake (known flaky test)
+- Deprioritize: lint warnings moved to Watch List
+- Friction: triage missed nightly deploy failure (was infra, not code)
+- Adjustment: include infra check status in scan
+
+## Post-Run Critique (from last run)
+
+<!-- Loop appends above -->
+
 ## Kill Switch
 
 - pause-all: false                  # 置 true 后所有 loop 立即停止
@@ -86,4 +96,4 @@ P3 未来：
 ---
 
 **Read by**: `.github/workflows/loop-daily-triage.yml`（Phase 2+ 激活）
-**Last updated**: <由 loop 自动更新>
+**Last updated**: 2026-08-06 (audit run, Human Inbox restored)
