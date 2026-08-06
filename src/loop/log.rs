@@ -126,22 +126,26 @@ pub fn append_record(path: impl AsRef<Path>, record: &RunRecord) -> Result<()> {
     Ok(())
 }
 
-/// 读取所有记录（仅测试 / 解析用）
+/// 读取所有记录（跳过格式错误的行；仅整体文件不可读时返回错误）
 ///
 /// # Errors
 ///
-/// 读取或解析失败时返回错误
+/// 仅在文件无法读取时返回错误；单行解析失败被静默跳过。
 pub fn read_all(path: impl AsRef<Path>) -> Result<Vec<RunRecord>> {
     let content = std::fs::read_to_string(path.as_ref())
         .map_err(|e| crate::core::error::HarnessError::NotFound(format!("log not found: {e}")))?;
     let mut out = Vec::new();
-    for line in content.lines() {
+    for (i, line) in content.lines().enumerate() {
         if line.trim().is_empty() {
             continue;
         }
-        let rec: RunRecord = serde_json::from_str(line)
-            .map_err(|e| crate::core::error::HarnessError::Serialization(e.to_string()))?;
-        out.push(rec);
+        match serde_json::from_str::<RunRecord>(line) {
+            Ok(rec) => out.push(rec),
+            Err(e) => {
+                // ponytail: skip malformed lines, don't fail the whole file
+                eprintln!("warn: loop-run-log.jsonl line {} skipped (parse error: {e})", i + 1);
+            }
+        }
     }
     Ok(out)
 }
