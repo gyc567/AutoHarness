@@ -92,11 +92,61 @@ time cargo run -- synthesize --code "fn test() {}"
 
 ---
 
+## 5. Loop Readiness Score（Loop 系统健康度）
+
+| 属性 | 值 |
+|------|-----|
+| 定义 | `loop-doctor.sh` 10 维综合评分 |
+| 测量方法 | `bash scripts/loop-doctor.sh` 或 `cargo run -- loop doctor .` |
+| 当前目标 | ≥ 80（解锁 L3 候选 Pattern） |
+| 现状基线 | 88 (R3，2026-08-06 Phase 1 完成) |
+
+**改进方向**:
+- 维持 10 个配置文件存在性
+- 持续累积 L1 runs（每 24h 至少 1 条）
+- 守住 maker/checker 分离的 HarnessType 引用
+
+---
+
+## 6. L1 Accuracy（State.md 人工 review 准确率）
+
+| 属性 | 值 |
+|------|-----|
+| 定义 | 人工 review 确认 STATE.md 中"对"的比例 |
+| 测量方法 | `bash scripts/loop-accuracy.sh`（解析 STATE.md 的 `## Accuracy Tracking` 段） |
+| 当前目标 | ≥ 80%（解锁 L2 候选 Pattern） |
+| 现状基线 | 待 Phase 2 启动后累积（14 天 + ≥ 10 runs） |
+
+---
+
+## 7. Token 效率（实际 / 预算）
+
+| 属性 | 值 |
+|------|-----|
+| 定义 | 实际 token 开销 / `loop-budget.md` 预算 |
+| 测量方法 | 每次 run 检查；80% 降级 L1，100% 退出，150% 红线 |
+| 当前目标 | ≤ 80%（强制降级） |
+| 现状基线 | 0（Phase 1 未跑任何 loop） |
+
+---
+
+## 8. 信噪比（需人介入 / 总发现项）
+
+| 属性 | 值 |
+|------|-----|
+| 定义 | 需人介入的发现项数 / 总发现项数 |
+| 测量方法 | `loop-accuracy.sh` 解析 |
+| 当前目标 | ≤ 25%（越低越好） |
+| 现状基线 | 待 Phase 2 累积 |
+
+---
+
 ## 指标变更历史
 
 | 日期 | 版本 | 变更内容 | 原因 |
 |------|------|----------|------|
-| 2026-08-04 | 0.1.0 | 初始定义 | 项目启动 |
+| 2026-08-04 | 0.1.0 | 初始定义（4 项） | 项目启动 |
+| 2026-08-06 | 0.2.0 | 新增 4 项 Loop 指标（§5-8） | 集成 loop-engineering 方法论 |
 
 ---
 

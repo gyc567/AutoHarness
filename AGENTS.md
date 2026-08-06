@@ -601,5 +601,53 @@ cargo run -- metrics --update
 
 ---
 
-**Last Updated**: 2026-08-04
+## 8. Loop-Engineering 操作（2026-08-06 起）
+
+本项目已集成 [loop-engineering](https://github.com/cobusgreyling/loop-engineering) 方法论层。详见 [`docs/loop-engineering/`](docs/loop-engineering/README.md)。
+
+### 关键命令
+
+```bash
+# 检查 Loop Readiness Score（10 维 0-100，R0-R3）
+cargo run -- loop doctor .
+bash scripts/loop-doctor.sh            # bash 等价
+
+# 跑一次 loop（Phase 2 才真正激活；Phase 1 为 mock）
+cargo run -- loop run --pattern improvement-loop --level L1
+
+# 路径门禁
+cargo run -- loop gate check --paths "Cargo.lock,src/core/harness.rs"
+
+# Accuracy 检查（L2 解锁 4 门）
+bash scripts/loop-accuracy.sh --check
+```
+
+### 强制约束（任何 AI agent 必须遵守）
+
+- **永不改** `.env` / `Cargo.lock` / `src/core/*` / `src/engine/*` / `src/main.rs`（denylist）
+- **永不让** loop 自动 merge 到 main
+- **永不让** loop 修改 `GOAL.md` / `PLANS.md` / `DOCS.md`
+- **永远**先开 draft PR，等人类 review
+- score.sh 分数**不得降低**（0 容忍硬约束）
+- 每项 fix 最多 **3 次**尝试，超过 escalate 到 STATE.md Human Inbox
+
+完整约束见 [`loop-constraints.md`](loop-constraints.md) + [`gate.yaml`](gate.yaml)。
+
+### Loop Readiness vs Score 双轨
+
+- `bash scripts/score.sh` — **code quality** fitness（满分 100）
+- `bash scripts/loop-doctor.sh` — **loop system** readiness（满分 100）
+
+两个都 100，loop 才算"自进化"成熟。详见 [`docs/loop-engineering/patterns-and-levels.md`](docs/loop-engineering/patterns-and-levels.md) §3.3。
+
+### 当前状态（2026-08-06 Phase 1 完成）
+
+- ✅ 31 个新文件 + 6 个修改
+- ✅ Loop Readiness R3（88/100）
+- ✅ Code Quality 100/100
+- ⏸ **不**激活任何 GitHub Actions workflow（Phase 2 才激活）
+
+---
+
+**Last Updated**: 2026-08-06
 **Version**: 0.3.0

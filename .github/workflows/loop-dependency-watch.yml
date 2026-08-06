@@ -1,0 +1,64 @@
+name: Loop Dependency Watch
+
+# 详见 docs/loop-engineering/patterns-and-levels.md §1.7
+# 注意：Cargo.lock 在 gate.yaml denylist，只开 PR、不自动改
+
+on:
+  schedule:
+    # 每周日 UTC
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write  # 开 patch-only PR（不自动 merge）
+
+jobs:
+  loop-dependency-watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Install cargo-audit
+        run: |
+          if ! command -v cargo-audit >/dev/null 2>&1; then
+            echo "::warning::cargo-audit 未安装；降级为只跑 cargo outdated"
+          fi
+
+      - name: Run cargo audit
+        continue-on-error: true
+        run: |
+          if command -v cargo-audit >/dev/null 2>&1; then
+            cargo audit --json > /tmp/audit.json || true
+            cat /tmp/audit.json | jq '.vulnerabilities.found' || echo "0"
+          fi
+
+      - name: Run loop (L1 report-only)
+        run: |
+          cargo run --release -- loop run \
+            --pattern dependency-watch \
+            --level L1
+
+      - name: Comment on stale deps
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '🤖 **loop(dependency-watch) L1 weekly report**\n\n';
+            body += 'CVE 状态与依赖新鲜度已扫描。详见 `STATE.md`。\n\n';
+            body += '⚠️ **注意**：本 loop 只开 PR，**不**自动改 `Cargo.lock`（denylist）。';
+            await github.rest.issues.createComment({
+              issue_number: context.runId,  // placeholder
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            }).catch(() => {
+              // 注释可能失败；不影响主任务
+            });

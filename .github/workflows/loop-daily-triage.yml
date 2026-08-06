@@ -1,0 +1,80 @@
+name: Loop Daily Triage
+
+# 详见 docs/loop-engineering/patterns-and-levels.md §1.1
+# Phase 2 才激活（per implementation-roadmap.md）
+
+on:
+  schedule:
+    # 工作日早上 8 点 UTC
+    - cron: '0 8 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      pattern:
+        description: 'Pattern ID'
+        required: false
+        default: 'improvement-loop'
+        type: choice
+        choices:
+          - improvement-loop
+          - synthesis-quality
+          - test-coverage
+          - doc-staleness
+      pause:
+        description: 'Pause all loops'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write       # 仅写 STATE.md / LOOP.md / loop-run-log.jsonl
+  pull-requests: write  # 开 draft PR / 评论
+  issues: write         # escalation 开 issue
+
+jobs:
+  loop-daily-triage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Check kill switch
+        id: kill-switch
+        run: |
+          if [[ "${{ github.event.inputs.pause }}" == "true" ]]; then
+            echo "kill=active" >> $GITHUB_OUTPUT
+          elif grep -q "pause-all: true" STATE.md 2>/dev/null; then
+            echo "kill=active" >> $GITHUB_OUTPUT
+          else
+            echo "kill=inactive" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run loop (L1 report-only)
+        if: steps.kill-switch.outputs.kill != 'active'
+        run: |
+          cargo run --release -- loop run \
+            --pattern ${{ github.event.inputs.pattern || 'improvement-loop' }} \
+            --level L1 \
+            --dry-run=false
+
+      - name: Commit STATE if changed
+        if: steps.kill-switch.outputs.kill != 'active'
+        run: |
+          if [[ -n "$(git status --porcelain STATE.md LOOP.md loop-run-log.jsonl 2>/dev/null)" ]]; then
+            git config user.name "loop-bot"
+            git config user.email "loop-bot@users.noreply.github.com"
+            git add STATE.md LOOP.md loop-run-log.jsonl
+            git commit -m "loop(${{ github.event.inputs.pattern || 'improvement-loop' }}): L1 report [skip ci]"
+            git push
+          fi
+
+      - name: Upload run log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loop-run-log
+          path: loop-run-log.jsonl

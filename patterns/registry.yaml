@@ -1,0 +1,194 @@
+version: 1
+project: autoharness
+# 详见 docs/loop-engineering/patterns-and-levels.md
+
+patterns:
+  - id: improvement-loop
+    name: Improvement Loop
+    file: patterns/improvement-loop.md
+    cadence: 1d
+    risk: low
+    tools: [github-actions]
+    skills:
+      - skills/loops/loop-triage/SKILL.md
+    state: STATE.md
+    phases:
+      - triage-score
+      - propose-action
+      - verify
+      - commit
+    human_gates:
+      - score-regression
+      - multi-file-changes
+    starter: examples/minimal-rust-loop/
+    week_one_mode: L1
+    token_cost: medium
+    cost:
+      tokens_noop: 5000
+      tokens_report: 50000
+      tokens_action: 100000    # 不得 > suggested_daily_cap
+      stable_fraction: 0.35
+      suggested_daily_cap: 100000
+      early_exit_required: false
+
+  - id: synthesis-quality
+    name: Synthesis Quality Watch
+    file: patterns/synthesis-quality.md
+    cadence: 1d
+    risk: low
+    tools: [github-actions]
+    skills:
+      - skills/loops/loop-triage/SKILL.md
+    state: STATE.md
+    phases:
+      - run-tests
+      - collect-metrics
+      - flag-anomalies
+    human_gates:
+      - reward-regression
+    starter: examples/minimal-rust-loop/
+    week_one_mode: L1
+    token_cost: medium
+    cost:
+      tokens_noop: 5000
+      tokens_report: 30000
+      tokens_action: 100000
+      stable_fraction: 0.35
+      suggested_daily_cap: 100000
+      early_exit_required: false
+
+  - id: test-coverage
+    name: Test Coverage Watch
+    file: patterns/test-coverage.md
+    cadence: 1d
+    risk: low
+    tools: [github-actions]
+    skills:
+      - skills/loops/loop-triage/SKILL.md
+    state: STATE.md
+    phases:
+      - measure-coverage
+      - find-uncovered
+      - report-gaps
+    human_gates:
+      - tooling-missing
+    starter: examples/minimal-rust-loop/
+    week_one_mode: L1
+    token_cost: medium
+    requires_tooling: [cargo-tarpaulin]   # 缺失时降级 L1
+    cost:
+      tokens_noop: 5000
+      tokens_report: 30000
+      tokens_action: 100000
+      stable_fraction: 0.35
+      suggested_daily_cap: 100000
+      early_exit_required: false
+
+  - id: doc-staleness
+    name: Documentation Staleness Watch
+    file: patterns/doc-staleness.md
+    cadence: 3d
+    risk: low
+    tools: [github-actions]
+    skills:
+      - skills/loops/loop-triage/SKILL.md
+    state: STATE.md
+    phases:
+      - compare-mtimes
+      - flag-stale
+    human_gates:
+      - []
+    starter: examples/minimal-rust-loop/
+    week_one_mode: L1
+    token_cost: low
+    cost:
+      tokens_noop: 5000
+      tokens_report: 20000
+      tokens_action: 80000
+      stable_fraction: 0.35
+      suggested_daily_cap: 80000
+      early_exit_required: false
+
+  - id: clippy-fmt-watch
+    name: Clippy/Fmt Watch (on-PR)
+    file: patterns/clippy-fmt-watch.md
+    cadence: on-pr
+    risk: medium
+    tools: [github-actions]
+    skills:
+      - skills/loops/loop-verifier/SKILL.md
+    state: STATE.md
+    phases:
+      - detect-fmt-drift
+      - auto-fix-pr-branch      # PR 分支内可自动 commit；不自动 merge
+      - comment-clippy          # clippy 失败仅评论，不自动修
+    human_gates:
+      - clippy-failure
+    starter: examples/minimal-rust-loop/
+    week_one_mode: L1
+    token_cost: low
+    cost:
+      tokens_noop: 2000
+      tokens_report: 10000
+      tokens_action: 50000
+      stable_fraction: 0.35
+      suggested_daily_cap: 100000
+      early_exit_required: true
+
+  - id: release-drafter
+    name: Release Notes Drafter
+    file: patterns/release-drafter.md
+    cadence: on-tag
+    risk: low
+    tools: [github-actions]
+    skills:
+      - skills/loops/loop-triage/SKILL.md
+    state: STATE.md
+    phases:
+      - scan-commits
+      - categorize
+      - draft
+      - open-issue
+    human_gates:
+      - breaking-change
+      - security-mention
+    starter: examples/minimal-rust-loop/
+    week_one_mode: L1
+    token_cost: low
+    cost:
+      tokens_noop: 5000
+      tokens_report: 15000
+      tokens_action: 50000
+      stable_fraction: 0.35
+      suggested_daily_cap: 80000
+      early_exit_required: false
+
+  - id: dependency-watch
+    name: Dependency Watch
+    file: patterns/dependency-watch.md
+    cadence: 1w
+    risk: medium
+    tools: [github-actions]
+    skills:
+      - skills/loops/loop-triage/SKILL.md
+    state: STATE.md
+    phases:
+      - cargo-audit
+      - compare-lockfile
+      - classify-risk
+      - open-pr-for-patch        # 只开 PR，不自动改 Cargo.lock（denylist）
+    human_gates:
+      - major-bump
+      - high-sev-cve
+      - denylisted-package
+    starter: examples/minimal-rust-loop/
+    week_one_mode: L1
+    token_cost: medium
+    requires_tooling: [cargo-audit]        # 缺失时降级 L1
+    cost:
+      tokens_noop: 5000
+      tokens_report: 40000
+      tokens_action: 100000
+      stable_fraction: 0.35
+      suggested_daily_cap: 100000
+      early_exit_required: true

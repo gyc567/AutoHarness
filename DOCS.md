@@ -49,6 +49,14 @@
 - [合成引擎原理](docs/internals/synthesis-engine.md)
 - [状态机设计](docs/internals/state-machine.md)
 
+### Loop Engineering (循环工程)
+
+- [Loop Engineering 集成方案](docs/loop-engineering/README.md) - 引入 [loop-engineering](https://github.com/cobusgreyling/loop-engineering) 方法论
+- [完整集成方案](docs/loop-engineering/integration-plan.md) - 主设计：原则 + 架构 + 原语 + 安全门禁 + CLI
+- [Patterns 与 Readiness Levels](docs/loop-engineering/patterns-and-levels.md) - 7 个 Pattern + L0-L3 + 北极星
+- [实施路线图](docs/loop-engineering/implementation-roadmap.md) - Phase 1-4 + 文件清单 + 验收 + 风险
+- [全面审计报告](docs/loop-engineering/audit-2026-08-06.md) - 31 项发现 + 修订映射（2026-08-06）
+
 ### GOAL.md (自主改进)
 
 - [GOAL.md 融合方案](docs/goal-md/GOAL-md-融合方案.md)

@@ -4,6 +4,10 @@
 
 ---
 
+> 🤖 **Dogfooding [loop-engineering](https://github.com/cobusgreyling/loop-engineering)** — Loop Ready: 88/100 (R3) · Patterns: 7 · 详见 [`docs/loop-engineering/`](docs/loop-engineering/README.md)
+
+---
+
 ## 📚 Documentation
 
 ### 🌍 Languages / 语言

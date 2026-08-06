@@ -15,6 +15,7 @@ use tracing_subscriber::{fmt, EnvFilter};
 
 use autoharness::engine::synthesis::SimpleEvaluator;
 use autoharness::engine::{CodeSynthesisEngine, Evaluator, SynthesisConfig};
+use autoharness::r#loop::runner::Loop;
 use autoharness::sandbox::{SandboxConfig, SandboxExecutor};
 
 /// CLI argument parser
@@ -119,6 +120,109 @@ enum Commands {
         #[command(subcommand)]
         action: ConfigAction,
     },
+
+    /// Loop-Engineering: 设计系统化、可度量的循环工程
+    ///
+    /// 详见 docs/loop-engineering/
+    Loop {
+        #[command(subcommand)]
+        action: LoopAction,
+    },
+}
+
+/// Loop 子命令（loop-engineering 方法论层）
+#[derive(Subcommand)]
+enum LoopAction {
+    /// 脚手架：在当前目录创建 loop 配置文件
+    Init,
+
+    /// Readiness 评估：检查项目是否符合 loop 运行条件
+    Doctor,
+
+    /// 打印 STATE.md 摘要
+    Status,
+
+    /// 估算 token 成本
+    Cost {
+        /// Pattern ID（如 improvement-loop）
+        #[arg(short, long)]
+        pattern: String,
+
+        /// Level（L0/L1/L2/L3）
+        #[arg(long, default_value = "L1")]
+        level: String,
+    },
+
+    /// 上下文熔断检查（3 次超限就停）
+    Context {
+        /// 仅检查不执行
+        #[arg(long)]
+        check: bool,
+    },
+
+    /// 路径门禁检查
+    Gate {
+        #[command(subcommand)]
+        action: GateAction,
+    },
+
+    /// 创建隔离 worktree（L2+ 用；L1 不创建）
+    Worktree {
+        #[command(subcommand)]
+        action: WorktreeAction,
+    },
+
+    /// 跑一次 loop（Phase 2 才真正实现；Phase 1 仅 mock）
+    Run {
+        /// Pattern ID
+        #[arg(short, long)]
+        pattern: String,
+
+        /// Level（L0/L1/L2/L3）
+        #[arg(long, default_value = "L1")]
+        level: String,
+
+        /// 仅打印不执行
+        #[arg(long)]
+        dry_run: bool,
+    },
+
+    /// STATE.md ↔ LOOP.md 漂移检测
+    Sync,
+}
+
+/// Gate 子命令
+#[derive(Subcommand)]
+enum GateAction {
+    /// 检查路径是否在 denylist
+    Check {
+        /// 要检查的路径列表（逗号分隔）
+        #[arg(short, long)]
+        paths: String,
+    },
+}
+
+/// Worktree 子命令
+#[derive(Subcommand)]
+enum WorktreeAction {
+    /// 创建 worktree
+    Create {
+        /// Run ID
+        #[arg(long)]
+        run_id: String,
+
+        /// Pattern ID
+        #[arg(short, long)]
+        pattern: String,
+    },
+    /// 删除 worktree
+    Remove {
+        /// Worktree 路径
+        #[arg(short, long)]
+        path: PathBuf,
+    },
+    /// 列出 loop worktree
+    List,
 }
 
 #[derive(Subcommand)]
@@ -409,6 +513,125 @@ fn handle_benchmark(iterations: u32, output: Option<PathBuf>) -> Result<()> {
     Ok(())
 }
 
+/// Handle loop command
+fn handle_loop(action: LoopAction) -> Result<()> {
+    match action {
+        LoopAction::Init => {
+            println!("Loop init: scaffold placeholder (Phase 1)");
+            println!("See docs/loop-engineering/ for full design.");
+        }
+        LoopAction::Doctor => {
+            let report = autoharness::r#loop::audit::audit(".")?;
+            println!(
+                "Loop Readiness Score: {} / 100 (readiness: {})",
+                report.total, report.readiness
+            );
+            println!("\nDimensions:");
+            for d in &report.dimensions {
+                println!("  {:<25} {:>3}/{:<3}  {}", d.name, d.score, d.max, d.reason);
+            }
+            if !report.top_actions.is_empty() {
+                println!("\nTop actions:");
+                for a in &report.top_actions {
+                    println!("  • {a}");
+                }
+            }
+        }
+        LoopAction::Status => {
+            let path = std::path::Path::new("STATE.md");
+            if !path.exists() {
+                anyhow::bail!("STATE.md not found");
+            }
+            let content = std::fs::read_to_string(path)?;
+            let lines: Vec<&str> = content.lines().collect();
+            let print_count = lines.len().min(40);
+            for line in &lines[..print_count] {
+                println!("{line}");
+            }
+        }
+        LoopAction::Cost { pattern, level } => {
+            println!("Cost estimate for pattern={pattern} level={level}");
+            println!("(Phase 1 placeholder; see patterns/registry.yaml for real caps)");
+        }
+        LoopAction::Context { check: _ } => {
+            println!("Loop context check: no previous failures recorded (Phase 1 fresh state)");
+        }
+        LoopAction::Gate { action } => {
+            handle_gate(action)?;
+        }
+        LoopAction::Worktree { action } => {
+            handle_worktree(action)?;
+        }
+        LoopAction::Run {
+            pattern,
+            level,
+            dry_run,
+        } => {
+            let lvl = autoharness::r#loop::runner::Level::parse(&level)
+                .ok_or_else(|| anyhow::anyhow!("invalid level: {level}"))?;
+            let ctx = autoharness::r#loop::runner::LoopContext {
+                pattern: pattern.clone(),
+                level: lvl,
+                trigger: autoharness::r#loop::runner::Trigger::Manual,
+                project_root: std::path::PathBuf::from("."),
+                dry_run,
+            };
+            let mock = autoharness::r#loop::runner::MockLoop::new(pattern);
+            let result = mock.run(&ctx)?;
+            println!(
+                "Run result: status={:?} findings={} actions={} escalations={}",
+                result.status, result.findings, result.actions, result.escalations
+            );
+            println!("Message: {}", result.message);
+        }
+        LoopAction::Sync => {
+            println!("Loop sync: STATE.md ↔ LOOP.md drift check (Phase 1 placeholder)");
+        }
+    }
+    Ok(())
+}
+
+/// Handle gate subcommand
+fn handle_gate(action: GateAction) -> Result<()> {
+    match action {
+        GateAction::Check { paths } => {
+            let gate_path = std::path::Path::new("gate.yaml");
+            let gate = autoharness::r#loop::gate::Gate::load(gate_path)
+                .map_err(|e| anyhow::anyhow!("gate.yaml load failed: {e}"))?;
+            for p in paths.split(',') {
+                let trimmed = p.trim();
+                let decision = gate.check(trimmed);
+                println!("{trimmed:<40} → {}", decision.label());
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Handle worktree subcommand
+fn handle_worktree(action: WorktreeAction) -> Result<()> {
+    match action {
+        WorktreeAction::Create { run_id, pattern } => {
+            println!("Loop worktree create: run_id={run_id} pattern={pattern}");
+            println!("(Phase 1 placeholder; git worktree create in Phase 2)");
+        }
+        WorktreeAction::Remove { path } => {
+            println!("Loop worktree remove: {}", path.display());
+        }
+        WorktreeAction::List => {
+            let list = autoharness::r#loop::worktree::list_loop_worktrees(".");
+            if list.is_empty() {
+                println!("(no loop worktrees)");
+            } else {
+                for wt in list {
+                    println!("{wt}");
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Handle config command
 fn handle_config(action: ConfigAction) -> Result<()> {
     match action {
@@ -513,6 +736,9 @@ async fn main() -> Result<()> {
         }
         Commands::Config { action } => {
             handle_config(action)?;
+        }
+        Commands::Loop { action } => {
+            handle_loop(action)?;
         }
     }
 
