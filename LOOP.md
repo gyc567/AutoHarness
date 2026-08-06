@@ -30,8 +30,10 @@
 
 | 日期 | 写入条目数 | 心跳 OK |
 |---|---|---|
-| _（暂无记录）_ | | |
+| improvement-loop | L1 | 1d | ts-1785988400 | ✅ | active (run=run-1785988400-1) |
 
 ---
 
 **Last updated**: 2026-08-06 (daily-triage scaffolded)
+
+_last_run: ts-1785988416
