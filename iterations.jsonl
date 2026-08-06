@@ -2,3 +2,5 @@
 
 {"iteration":1,"before":15,"after":20,"action":"Fix 3 sort_by_key clippy warnings","result":"kept","note":"Replaced sort_by with sort_by_key using std::cmp::Reverse"}
 {"iteration":2,"before":0,"after":20,"action":"Run cargo fmt on all files","result":"kept","note":"Fixed formatting issues across 5 files"}
+
+{"iteration":3,"timestamp":"2026-08-06T14:45:30Z","component":"safety","before":7,"after":7,"action":"noop","result":"kept","note":"safety 7/10: 8 unsafe blocks all in src/core/* and src/engine/* (denylist). Ponytail ladder: cannot YAGNI, cannot stdlib-replace, cannot shrink. Real performance requirement."}
