@@ -103,14 +103,10 @@ impl RunRecord {
     }
 }
 
-/// 生成类似 chrono 的 UTC 时间戳（无 chrono crate 依赖）
+/// Generate ISO 8601 UTC timestamp (e.g. "2026-08-06T03:56:00Z")
 fn chrono_like_now() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0);
-    format!("1970-01-01T00:00:{secs}Z")
+    use chrono::Utc;
+    Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
 
 /// 追加一条记录到 JSONL 文件

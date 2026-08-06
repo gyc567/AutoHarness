@@ -266,29 +266,19 @@ fn update_loop_md(path: &Path, run_id: &str) -> Result<()> {
     Ok(())
 }
 
-/// 生成类似 chrono 的 UTC 时间戳（无 chrono crate 直接依赖）
+/// Generate ISO 8601 UTC timestamp (e.g. "2026-08-06T03:56:00Z")
 fn chrono_like_now() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0);
-    // 简单 ISO 8601 近似：YYYY-MM-DDTHH:MM:SSZ
-    // 实际 UTC 计算需要 chrono crate；为 Phase 1 mock 仅输出 unix 时间戳标记
-    format!("ts-{secs}")
+    use chrono::Utc;
+    Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
 
-/// 生成 run_id（YYYYMMDDTHHMMSSZ-NNN）
+/// Generate run_id in ISO 8601 format: YYYYMMDDTHHMMSSZ-NNN
 fn generate_run_id() -> String {
+    use chrono::Utc;
     use std::sync::atomic::{AtomicU32, Ordering};
     static COUNTER: AtomicU32 = AtomicU32::new(1);
     let n = COUNTER.fetch_add(1, Ordering::SeqCst);
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .unwrap_or(0);
-    format!("run-{secs}-{n}")
+    format!("{}-{:03}", Utc::now().format("%Y%m%dT%H%M%SZ"), n)
 }
 
 /// STATE.md 不存在时的最小模板

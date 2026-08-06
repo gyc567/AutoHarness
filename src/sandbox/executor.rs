@@ -58,6 +58,8 @@ pub enum SandboxError {
     CompilationFailed(String),
     /// Runtime error
     RuntimeError(String),
+    /// Code rejected by security validation
+    CodeRejected(String),
 }
 
 impl std::fmt::Display for SandboxError {
@@ -75,6 +77,7 @@ impl std::fmt::Display for SandboxError {
             SandboxError::SystemError(msg) => write!(f, "System error: {}", msg),
             SandboxError::CompilationFailed(msg) => write!(f, "Compilation failed: {}", msg),
             SandboxError::RuntimeError(msg) => write!(f, "Runtime error: {}", msg),
+            SandboxError::CodeRejected(msg) => write!(f, "Code rejected: {}", msg),
         }
     }
 }
@@ -126,6 +129,9 @@ impl SandboxExecutor {
         code: &str,
         input: &str,
     ) -> Result<ExecutionResult, SandboxError> {
+        // SECURITY: validate code before writing it to disk or executing
+        utils::validate_code(code)?;
+
         let start_time = Instant::now();
         let _limiter = ResourceLimiter::new(self.config.clone());
 
@@ -376,28 +382,93 @@ pub mod utils {
     }
 
     /// Validate that code doesn't contain obvious security violations
+    /// and shell metacharacters that could enable injection attacks.
     pub fn validate_code(code: &str) -> Result<(), SandboxError> {
-        let forbidden_patterns = ["rm -rf /", ":(){ :|:& };:", "fork bomb", "while true"];
+        // Block high-risk command patterns
+        let forbidden_patterns = [
+            "rm -rf /",
+            ":(){ :|:& };:",
+            "fork bomb",
+            "while true",
+            "eval ",
+            "exec ",
+        ];
 
         for pattern in &forbidden_patterns {
             if code.contains(pattern) {
-                return Err(SandboxError::InvalidConfig(format!(
-                    "Code contains forbidden pattern: {}",
-                    pattern
+                return Err(SandboxError::CodeRejected(format!(
+                    "forbidden pattern: {pattern}"
                 )));
             }
+        }
+
+        // Block shell metacharacters that enable command chaining/injection
+        let metacharacter_patterns = [
+            ('&', "ampersand"),
+            (';', "semicolon"),
+            ('|', "pipe"),
+            ('>', "redirect-out"),
+            ('<', "redirect-in"),
+            ('(', "paren-open"),
+            (')', "paren-close"),
+        ];
+
+        for (ch, name) in &metacharacter_patterns {
+            if code.contains(*ch) {
+                return Err(SandboxError::CodeRejected(format!(
+                    "shell metacharacter '{ch}' ({}) not allowed — use single commands only",
+                    name
+                )));
+            }
+        }
+
+        // Block backtick command substitution
+        if code.contains('`') {
+            return Err(SandboxError::CodeRejected(
+                "backtick command substitution not allowed".to_string(),
+            ));
+        }
+
+        // Block unquoted $ (command substitution like $(cmd) or $var interpretation)
+        let unquoted_dollar = code.split('\'').any(|seg| seg.contains('$'));
+        if unquoted_dollar {
+            return Err(SandboxError::CodeRejected(
+                "unquoted $ not allowed — command substitution not permitted".to_string(),
+            ));
         }
 
         Ok(())
     }
 
-    /// Escape shell special characters in a string
+    /// Escape shell special characters in a string for safe embedding.
+    /// Covers all 12 POSIX shell metacharacters plus $ and `.
     pub fn shell_escape(s: &str) -> String {
-        s.replace('\\', "\\\\")
-            .replace('"', "\\\"")
-            .replace('\'', "\\'")
-            .replace('$', "\\$")
-            .replace('`', "\\`")
+        let mut result = String::with_capacity(s.len() * 2);
+        for ch in s.chars() {
+            match ch {
+                '\\' => result.push_str("\\\\"),
+                '"' => result.push_str("\\\""),
+                '\'' => result.push_str("\\'"),
+                '$' => result.push_str("\\$"),
+                '`' => result.push_str("\\`"),
+                '&' => result.push_str("\\&"),
+                ';' => result.push_str("\\;"),
+                '|' => result.push_str("\\|"),
+                '>' => result.push_str("\\>"),
+                '<' => result.push_str("\\<"),
+                '(' => result.push_str("\\("),
+                ')' => result.push_str("\\)"),
+                '*' => result.push_str("\\*"),
+                '?' => result.push_str("\\?"),
+                '[' => result.push_str("\\["),
+                '#' => result.push_str("\\#"),
+                ' ' => result.push_str("\\ "),
+                '\n' => result.push_str("\\n"),
+                '\t' => result.push_str("\\t"),
+                _ => result.push(ch),
+            }
+        }
+        result
     }
 }
 
@@ -477,14 +548,74 @@ mod tests {
 
     #[test]
     fn test_utils_validate_code() {
+        // Valid: simple commands without metacharacters
         assert!(utils::validate_code("echo hello").is_ok());
+        assert!(utils::validate_code("cat").is_ok());
+        assert!(utils::validate_code("pwd").is_ok());
+        assert!(utils::validate_code("ls -la").is_ok());
+        // Valid: single-quoted strings (safe from shell interpretation)
+        assert!(utils::validate_code("echo 'hello world'").is_ok());
+
+        // Invalid: forbidden patterns
         assert!(utils::validate_code("rm -rf /").is_err());
+        assert!(utils::validate_code(":(){ :|:& };:").is_err());
+        assert!(utils::validate_code("eval echo test").is_err());
+        assert!(utils::validate_code("exec /bin/sh").is_err());
+
+        // Invalid: shell metacharacters
+        for (ch, name) in [
+            ('&', "ampersand"),
+            (';', "semicolon"),
+            ('|', "pipe"),
+            ('>', "redirect"),
+            ('<', "redirect"),
+            ('(', "paren"),
+            (')', "paren"),
+        ] {
+            let code = format!("cat {ch} /etc/passwd");
+            let result = utils::validate_code(&code);
+            assert!(
+                result.is_err(),
+                "metachar '{ch}' ({name}) should be rejected"
+            );
+            let err = result.unwrap_err();
+            assert!(
+                matches!(err, SandboxError::CodeRejected(_)),
+                "should return CodeRejected variant"
+            );
+        }
+
+        // Invalid: backtick command substitution
+        assert!(utils::validate_code("echo `ls`").is_err());
+
+        // Invalid: unquoted dollar (command substitution)
+        assert!(utils::validate_code("echo $(ls)").is_err());
     }
 
     #[test]
     fn test_utils_shell_escape() {
+        // Old test still passes
         let escaped = utils::shell_escape("hello 'world'");
         assert!(escaped.contains("\\'"));
+
+        // New: all metacharacters escaped
+        let test_cases = [
+            ("hello&world", "\\&"),
+            ("a;b", "\\;"),
+            ("x|y", "\\|"),
+            ("out>file", "\\>"),
+            ("in<file", "\\<"),
+            ("(cmd)", "\\("),
+            ("var$name", "\\$"),
+            ("`cmd`", "\\`"),
+        ];
+        for (input, expected_escape) in test_cases {
+            let result = utils::shell_escape(input);
+            assert!(
+                result.contains(expected_escape),
+                "input={input:?}: expected escape of metachar, got {result:?}"
+            );
+        }
     }
 
     #[tokio::test]
@@ -511,6 +642,29 @@ mod tests {
         let output = result.unwrap();
         assert!(output.success());
         assert!(output.stdout.contains("test input"));
+    }
+
+    #[tokio::test]
+    async fn test_execute_with_input_rejects_dangerous_code() {
+        // Verify execute_with_input calls validate_code and rejects shell injection
+        let config = SandboxConfig::new().with_time_limit(5000);
+        let executor = SandboxExecutor::new(config).unwrap();
+
+        // All of these should be rejected before any execution
+        let dangerous = [
+            "echo hello; rm -rf /",
+            "cat /etc/passwd | grep root",
+            "echo test & cat /etc/shadow",
+            "echo `whoami`",
+            "eval echo pwned",
+        ];
+        for code in dangerous {
+            let result = executor.execute_with_input(code, "").await;
+            assert!(
+                result.is_err(),
+                "dangerous code {code:?} should be rejected"
+            );
+        }
     }
 
     #[tokio::test]
