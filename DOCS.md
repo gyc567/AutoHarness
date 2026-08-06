@@ -56,6 +56,7 @@
 - [Patterns 与 Readiness Levels](docs/loop-engineering/patterns-and-levels.md) - 7 个 Pattern + L0-L3 + 北极星
 - [实施路线图](docs/loop-engineering/implementation-roadmap.md) - Phase 1-4 + 文件清单 + 验收 + 风险
 - [全面审计报告](docs/loop-engineering/audit-2026-08-06.md) - 31 项发现 + 修订映射（2026-08-06）
+- [Ponytail 整合方案](docs/loop-engineering/ponytail-integration.md) - ponytail skill × loop-engineering 深度整合（Phase 0-3）
 
 ### GOAL.md (自主改进)
 
