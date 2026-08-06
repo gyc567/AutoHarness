@@ -54,6 +54,8 @@ P3 未来：
 
 - [ts-1785980641] **safety**: 7/10 — Remove or justify `unsafe` blocks (target 10/10)
 
+- [ts-1785988416] **safety**: 7/10 — Remove or justify `unsafe` blocks (target 10/10)
+
 ## Recent Noise (ignored this run)
 
 <!-- Loop appends above -->
