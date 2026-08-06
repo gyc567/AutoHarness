@@ -27,6 +27,7 @@ pub mod budget;
 pub mod constraints;
 pub mod gate;
 pub mod log;
+pub mod patterns;
 pub mod runner;
 pub mod state;
 pub mod worktree;

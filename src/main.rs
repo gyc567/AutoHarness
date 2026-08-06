@@ -576,8 +576,14 @@ fn handle_loop(action: LoopAction) -> Result<()> {
                 project_root: std::path::PathBuf::from("."),
                 dry_run,
             };
-            let mock = autoharness::r#loop::runner::MockLoop::new(pattern);
-            let result = mock.run(&ctx)?;
+            // Phase 2: improvement-loop 用真实实现；其他 Pattern 仍 mock
+            let result = if pattern == "improvement-loop" {
+                let l = autoharness::r#loop::patterns::improvement_loop::ImprovementLoop::new();
+                l.run(&ctx)?
+            } else {
+                let mock = autoharness::r#loop::runner::MockLoop::new(pattern);
+                mock.run(&ctx)?
+            };
             println!(
                 "Run result: status={:?} findings={} actions={} escalations={}",
                 result.status, result.findings, result.actions, result.escalations

@@ -6,7 +6,7 @@
 
 | Pattern ID | Level | Cadence | 最近 run | 心跳 OK | Status |
 |---|---|---|---|---|---|
-| _（暂无，Phase 1 完成 R1 readiness 后逐步激活）_ | | | | | |
+| improvement-loop | L1 | 1d | ts-1785980641 | ✅ | active (run=run-1785980641-1) |
 
 ## Pattern 注册
 

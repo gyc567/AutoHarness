@@ -17,6 +17,7 @@
 | 2026-08-05 | open-agent-teams 整合 | ✅ 已完成 | 1a39d12 |
 | 2026-08-05 | Skills 文档更新 | ✅ 已完成 | - |
 | 2026-08-06 | Loop-Engineering 集成 Phase 1 | ✅ 已完成 | - |
+| 2026-08-06 | Loop-Engineering 集成 Phase 2 Kickoff | 🚀 进行中 | - |
 
 ---
 
@@ -45,6 +46,18 @@
 - [x] DOCS.md 更新
 - [x] Skills 审计报告更新
 - [x] AGENTS.md Design Principles
+
+### Phase 6: Loop-Engineering 集成 Phase 2（improvement-loop L1 14 天观察）🚀
+
+- [x] 实现 `src/loop/patterns/improvement_loop.rs`（真实读取 score.sh 写 STATE.md）
+- [x] main.rs dispatch improvement-loop 到真实实现（其他 Pattern 仍 mock）
+- [x] 单元测试（find_lowest / suggest_action / find_section_end / append_to_watch_list）
+- [x] 手动 kickoff run：safety 7/10 写入 STATE.md Watch List
+- [x] LOOP.md Active Loops 表更新为 improvement-loop | L1 | 1d
+- [x] loop-run-log.jsonl 首次记录
+- [ ] 14 天人工 review + accuracy 记录（待积累）
+- [ ] Q3=A 四门全过才解锁 L2
+- [ ] 不激活 GitHub Actions（仅手动触发）
 
 ### Phase 5: Loop-Engineering 集成（Q1=B / Q2=A / Q3=A）✅
 
