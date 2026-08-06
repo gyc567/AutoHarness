@@ -76,8 +76,6 @@ When logging a Ponytail Refactor, append to the iteration record:
 
 ### 4. Execute
 
-### 4. Execute
-
 Execute the selected action.
 
 ### 5. Verify
@@ -129,4 +127,24 @@ Logged to: iterations.jsonl
 - **One commit per change**: Atomic commits for easy rollback
 - **Always format first**: Run `cargo fmt` before `cargo clippy`
 - **Verify before commit**: Always run the score script after changes
-- **Ponytail first** (see Code Norms below): before picking an action, run the 7-level ladder self-check
+- **Ponytail first**: before picking an action, run the 7-level ladder self-check
+
+## L2: Assisted Mode (Gate 3 — Ponytail Review)
+
+When running at L2 (after L1 observation period + human approval in STATE.md):
+
+After executing the change and passing `cargo fmt && cargo clippy && cargo test`, add a **ponytail-review gate** before committing:
+
+1. Get the diff: `git diff --no-color`
+2. Run `/ponytail-review` on the diff
+3. If ponytail-review finds `stdlib:` or `native:` issues:
+   - Leave a PR comment noting the finding
+   - Escalate to STATE.md Human Inbox (do not auto-fix)
+4. If ponytail-review finds `yagni:` or `delete:` issues:
+   - Add `ponytail:` comments to the diff (mark ceiling + upgrade_when)
+   - Proceed with commit (non-blocking)
+5. If ponytail-review finds `shrink:` issues:
+   - Apply the shrink in allowlist paths
+   - Otherwise escalate
+
+> Gate 3 does not run in L1 (report-only). It activates only at L2+ when `L2-unlock-approved` appears in STATE.md.
