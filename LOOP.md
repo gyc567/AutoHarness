@@ -1,6 +1,11 @@
 # Loop 清单
 
 > **活动 loop 清单 + 心跳表**。loop 自动更新；人类可读可编辑。
+>
+> **职责边界**：
+> - `LOOP.md` — **清单与心跳**：哪些 loop 在跑、cadence、活跃状态、心跳记录
+> - `STATE.md` — **运行态数据**：Human Inbox、Watch List、Recent Noise、Kill Switch、Metrics
+> 这两个文件互补、不重叠。LOOP.md 是"谁在跑"，STATE.md 是"当前状态"
 
 ## Active Loops
 

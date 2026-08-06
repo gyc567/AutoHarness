@@ -108,9 +108,48 @@ impl StateFile {
     }
 
     /// 检查 kill switch（pause-all）是否激活
+    ///
+    /// 使用 section-aware 解析：只在 Kill Switch 章节中查找 `pause-all: true`，
+    /// 避免与其他章节的类似字符串误匹配。
     #[must_use]
     pub fn kill_switch_active(&self) -> bool {
-        self.content.contains("pause-all: true")
+        self.kill_switch_value("pause-all")
+            .map(|v| v == "true")
+            .unwrap_or(false)
+    }
+
+    /// 获取指定 kill-switch key 的值（如 `pause-improvement-loop`）。
+    /// 只在 Kill Switch 章节内查找。
+    #[must_use]
+    pub fn kill_switch_value(&self, key: &str) -> Option<String> {
+        let in_kill_section = self.find_section("## Kill Switch")?;
+        for line in in_kill_section.lines() {
+            let trimmed = line.trim();
+            if !trimmed.starts_with('-') && !trimmed.starts_with('*') {
+                continue;
+            }
+            // Remove list marker: "- " or "* "
+            let after_marker = trimmed.strip_prefix('-').or(trimmed.strip_prefix('*'))?;
+            let after_marker = after_marker.trim();
+            // Check for `key: value` pattern
+            if let Some(pos) = after_marker.find(':') {
+                let k = after_marker[..pos].trim();
+                let v = after_marker[pos + 1..].trim();
+                if k == key {
+                    return Some(v.to_string());
+                }
+            }
+        }
+        None
+    }
+
+    /// 查找指定章节标题下的所有行（到下一个 ## 标题为止）。
+    fn find_section(&self, header: &str) -> Option<&str> {
+        let content = self.content.as_str();
+        let start = content.find(header)? + header.len();
+        let rest = &content[start..];
+        let end = rest.find("\n## ").unwrap_or(rest.len());
+        Some(&rest[..end])
     }
 }
 
@@ -146,7 +185,8 @@ mod tests {
     #[test]
     fn test_state_kill_switch() {
         let mut tmp = NamedTempFile::new().unwrap();
-        writeln!(tmp, "## Kill Switch\n- pause-all: true").unwrap();
+        // Section-aware: needs "## Kill Switch" header + newline separator
+        writeln!(tmp, "## Kill Switch\n\n- pause-all: true\n\n## Other").unwrap();
         tmp.flush().unwrap();
         let state = StateFile::load(tmp.path()).unwrap();
         assert!(state.kill_switch_active());
@@ -155,10 +195,45 @@ mod tests {
     #[test]
     fn test_state_kill_switch_inactive() {
         let mut tmp = NamedTempFile::new().unwrap();
-        writeln!(tmp, "## Kill Switch\n- pause-all: false").unwrap();
+        writeln!(tmp, "## Kill Switch\n\n- pause-all: false\n\n## Other").unwrap();
         tmp.flush().unwrap();
         let state = StateFile::load(tmp.path()).unwrap();
         assert!(!state.kill_switch_active());
+    }
+
+    #[test]
+    fn test_state_kill_switch_not_affected_by_other_sections() {
+        // The old grep would match "pause-all: true" anywhere.
+        // Robust parsing only checks the Kill Switch section.
+        let mut tmp = NamedTempFile::new().unwrap();
+        writeln!(
+            tmp,
+            "## Kill Switch\n\n- pause-all: false\n\n## Other\n\n- pause-all: true"
+        )
+        .unwrap();
+        tmp.flush().unwrap();
+        let state = StateFile::load(tmp.path()).unwrap();
+        assert!(
+            !state.kill_switch_active(),
+            "should not match pause-all: true in other sections"
+        );
+    }
+
+    #[test]
+    fn test_state_kill_switch_value() {
+        let mut tmp = NamedTempFile::new().unwrap();
+        writeln!(
+            tmp,
+            "## Kill Switch\n\n- pause-improvement-loop: true\n\n## Other"
+        )
+        .unwrap();
+        tmp.flush().unwrap();
+        let state = StateFile::load(tmp.path()).unwrap();
+        assert_eq!(
+            state.kill_switch_value("pause-improvement-loop"),
+            Some("true".to_string())
+        );
+        assert_eq!(state.kill_switch_value("pause-all"), None);
     }
 
     #[test]

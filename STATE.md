@@ -34,15 +34,15 @@ P1 本周：
 - [x] **[H4]** ~~`gate.yaml` 缺 8 个 src/ 路径 denylist~~ — 已修复：补充 `executor.rs config.rs limits.rs search.rs error.rs state.rs loop/mod.rs loop/gate.rs`（`4591bae` 后追加）
 
 P2 Phase 4：
-- [ ] **[C5]** `validate_code` 黑名单过弱
-- [ ] **[H1]** 7 个 harness template 是 stub（含 `TODO`）
-- [ ] **[M1]** 3 个未使用依赖（`duct`, `notify`, `metrics`）
+- [x] **[C5]** ~~`validate_code` 黑名单过弱~~ — 已修复：元字符全部拦截 + backtick/unquoted-$ + eval/exec 模式；由 C1/C2 一并解决
+- [x] **[H1]** ~~7 个 harness template 是 stub~~ — 已改进：每个模板增加 Purpose、When to Use、Success Patterns、Common Errors 节（`6f39f48`）
+- [x] **[M1]** ~~3 个未使用依赖~~ — 已移除：`duct`, `notify`, `metrics`（`6f39f48`）
 
 P3 未来：
-- [ ] **[M2]** README badge 数据陈旧 (88/100 → 实际 93/100)
-- [ ] **[M3]** 无 CHANGELOG.md
-- [ ] **[LE2]** LOOP.md vs STATE.md 责任重叠
-- [ ] **[LE4]** kill switch 用 grep 不稳健
+- [x] **[M2]** ~~README badge 数据陈旧~~ — 已更新：88/100 → 100/100（`6f39f48`）
+- [x] **[M3]** ~~无 CHANGELOG.md~~ — 已创建：CHANGELOG.md（`6f39f48`）
+- [x] **[LE2]** ~~LOOP.md vs STATE.md 责任重叠~~ — 已明确：LOOP.md 是"谁在跑"，STATE.md 是"当前状态"（`6f39f48`）
+- [x] **[LE4]** ~~kill switch 用 grep 不稳健~~ — 已重构：`contains()` → section-aware KV 解析（`6f39f48`）
 
 ## High Priority (loop is acting or waiting on human)
 
